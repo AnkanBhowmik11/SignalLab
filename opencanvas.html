@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="favicon.png">
+<title>SignalLab — Open Canvas Test</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e14;
+    --surface: #111720;
+    --surface2: #161d28;
+    --border: #1e2d3d;
+    --accent: #00d4ff;
+    --accent2: #ff6b6b;
+    --accent3: #7fff7f;
+    --accent4: #ffcc44;
+    --text: #c9d4e0;
+    --text-dim: #556070;
+    --text-bright: #e8f0f8;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .logo {
+    font-family: var(--mono);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .logo span { color: var(--text-dim); font-weight: 300; }
+  .header-tag {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  /* MAIN LAYOUT */
+.app {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  flex: 1;
+  overflow: hidden;
+}
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 12px;
+    gap: 8px;
+  }
+  .sidebar::-webkit-scrollbar { width: 3px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .sec-label {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-top: 4px;
+    margin-bottom: 6px;
+  }
+
+  .tool-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+  .tool-btn {
+    padding: 7px 6px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.67rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .tool-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .tool-btn.active { border-color: var(--accent); background: rgba(0,212,255,0.08); color: var(--accent); }
+  .tool-btn.danger:hover { border-color: var(--accent2); color: var(--accent2); }
+  .tool-btn.active-danger { border-color: var(--accent2); background: rgba(255,107,107,0.08); color: var(--accent2); }
+
+  .divider { height: 1px; background: var(--border); margin: 6px 0; }
+
+  label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    margin-bottom: 3px;
+  }
+  input[type="number"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text-bright);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    padding: 5px 8px;
+    outline: none;
+    margin-bottom: 6px;
+  }
+  input[type="number"]:focus { border-color: var(--accent); }
+
+  .color-row {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+  .color-dot {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .color-dot.active { border-color: white; transform: scale(1.15); }
+
+  .btn {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    border: none;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 5px;
+    letter-spacing: 0.5px;
+  }
+  .btn-primary { background: var(--accent); color: var(--bg); }
+  .btn-primary:hover { background: #33ddff; }
+  .btn-secondary { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+  .btn-secondary:hover { background: rgba(0,212,255,0.08); }
+  .btn-danger { background: transparent; border: 1px solid var(--accent2); color: var(--accent2); }
+  .btn-danger:hover { background: rgba(255,107,107,0.08); }
+
+  .output-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 8px;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--accent3);
+    min-height: 40px;
+    white-space: pre-wrap;
+    line-height: 1.6;
+    margin-bottom: 6px;
+  }
+
+  /* CANVAS AREA */
+  .canvas-wrap {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    background: #080c12;
+  }
+
+  #open-canvas {
+    display: block;
+    cursor: crosshair;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* FLOATING TOOLBAR — appears above canvas */
+  .float-toolbar {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 6px 14px;
+    z-index: 10;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  .float-btn {
+    padding: 5px 10px;
+    border-radius: 20px;
+    background: none;
+    border: 1px solid transparent;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .float-btn:hover { color: var(--text); border-color: var(--border); }
+  .float-btn.active { background: rgba(0,212,255,0.1); border-color: var(--accent); color: var(--accent); }
+  .float-sep { width: 1px; height: 16px; background: var(--border); }
+
+  /* CURSOR INFO */
+  .cursor-info {
+    position: absolute;
+    bottom: 10px;
+    left: 16px;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    pointer-events: none;
+    display: flex;
+    gap: 16px;
+  }
+  .cursor-info span { color: var(--text); }
+
+  /* SNAP HINT */
+  .snap-badge {
+    position: absolute;
+    top: 60px;
+    right: 14px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--accent4);
+    background: rgba(255,204,68,0.08);
+    border: 1px solid rgba(255,204,68,0.2);
+    border-radius: 4px;
+    padding: 3px 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .snap-badge.show { opacity: 1; }
+
+  /* STROKE LIST */
+  .stroke-list {
+    max-height: 80px;
+    overflow-y: auto;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+    margin-bottom: 6px;
+  }
+  .stroke-list::-webkit-scrollbar { width: 2px; }
+  .stroke-list::-webkit-scrollbar-thumb { background: var(--border); }
+  .eq-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--accent4);
+  margin: 2px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.eq-chip:hover { border-color: var(--accent4); }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="logo">Signal<span>Lab</span></div>
+    <a href="index.html"
+      style="background:none;border:1px solid var(--border);color:var(--text-dim);font-family:var(--mono);font-size:0.68rem;padding:5px 12px;border-radius:6px;text-decoration:none;transition:all 0.15s;letter-spacing:0.5px"
+      onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+      onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">← Home</a>
+  </div>
+  <div style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4)">Open Canvas</div>
+  <div class="header-tag">SignalLab v1.0</div>
+</header>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <div class="sec-label">Tools</div>
+    <div class="tool-grid">
+      <button class="tool-btn active" id="tool-line" onclick="setTool('line')">/ Line</button>
+      <button class="tool-btn" id="tool-draw" onclick="setTool('draw')">✏ Free</button>
+      <button class="tool-btn" id="tool-step" onclick="setTool('step')">⌐ Step</button>
+      <button class="tool-btn" id="tool-ramp" onclick="setTool('ramp')">⟋ Ramp</button>
+      <button class="tool-btn" id="tool-impulse" onclick="setTool('impulse')">↑ Impulse</button>
+      <button class="tool-btn danger" id="tool-erase" onclick="setTool('erase')">⌫ Erase</button>
+    </div>
+<div class="divider"></div>
+<div class="sec-label">Plot Equations</div>
+
+<div style="display:flex;gap:4px;margin-bottom:6px">
+  <input type="text" id="eqn-input"
+    style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text-bright);font-family:var(--mono);font-size:0.7rem;padding:6px 8px;outline:none"
+    onfocus="this.style.borderColor='var(--accent)'"
+    onblur="this.style.borderColor='var(--border)'"
+    onkeydown="if(event.key==='Enter') addEquation()">
+  <!-- color picker for this equation -->
+  <input type="color" id="eqn-color" value="#00d4ff"
+    style="width:28px;height:28px;border:none;border-radius:5px;cursor:pointer;background:none;padding:0;flex-shrink:0">
+</div>
+
+<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:2px;margin-bottom:8px">
+  <div class="eq-chip" onclick="appendEqn('u(t)')">u(t)</div>
+  <div class="eq-chip" onclick="appendEqn('r(t)')">r(t)</div>
+  <div class="eq-chip" onclick="appendEqn('delta(t)')">δ(t)</div>
+  <div class="eq-chip" onclick="appendEqn('sin(2*PI*t)')">sin</div>
+  <div class="eq-chip" onclick="appendEqn('cos(2*PI*t)')">cos</div>
+  <div class="eq-chip" onclick="appendEqn('exp(-t)*u(t)')">e⁻ᵗu</div>
+  <div class="eq-chip" onclick="appendEqn('rect(t)')">rect</div>
+  <div class="eq-chip" onclick="appendEqn('tri(t)')">tri</div>
+  <div class="eq-chip" onclick="appendEqn('sgn(t)')">sgn</div>
+  <div class="eq-chip" onclick="appendEqn('sinc(t)')">sinc</div>
+  <div class="eq-chip" onclick="appendEqn('abs(t)')">|t|</div>
+  <div class="eq-chip" onclick="appendEqn('t**2*u(t)')">t²u</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px">
+  <div>
+    <label>t start</label>
+    <input type="number" id="eq-tstart" value="-5" step="1"
+      style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text-bright);font-family:var(--mono);font-size:0.7rem;padding:5px 7px;outline:none"
+      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+  </div>
+  <div>
+    <label>t end</label>
+    <input type="number" id="eq-tend" value="5" step="1"
+      style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text-bright);font-family:var(--mono);font-size:0.7rem;padding:5px 7px;outline:none"
+      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+  </div>
+</div>
+
+<button class="btn btn-primary" onclick="addEquation()">＋ Add & Plot</button>
+
+<!-- Equation list -->
+<div id="eqn-list" style="display:flex;flex-direction:column;gap:4px;margin-top:6px"></div>
+
+<button class="btn btn-primary" onclick="plotEquation()">▶ Plot Equation</button>
+<button class="btn btn-secondary" onclick="document.getElementById('eqn-input').value=''">✕ Clear Eqn</button>
+    <div class="divider"></div>
+    <div class="sec-label">Stroke Color</div>
+    <div class="color-row">
+      <div class="color-dot active" style="background:#00d4ff" onclick="setColor('#00d4ff')" title="Cyan"></div>
+      <div class="color-dot" style="background:#ffcc44" onclick="setColor('#ffcc44')" title="Yellow"></div>
+      <div class="color-dot" style="background:#ff6b6b" onclick="setColor('#ff6b6b')" title="Red"></div>
+      <div class="color-dot" style="background:#7fff7f" onclick="setColor('#7fff7f')" title="Green"></div>
+      <div class="color-dot" style="background:#c084fc" onclick="setColor('#c084fc')" title="Purple"></div>
+      <div class="color-dot" style="background:#fb923c" onclick="setColor('#fb923c')" title="Orange"></div>
+    </div>
+
+    <div class="sec-label">Stroke Width</div>
+    <input type="number" id="stroke-width" value="2.5" min="1" max="8" step="0.5">
+
+    <div class="divider"></div>
+    <div class="sec-label">Axis Range</div>
+    <label>x range (±)</label>
+    <input type="number" id="xrange" value="10" min="2" max="40">
+    <label>y range (±)</label>
+    <input type="number" id="yrange" value="4" min="1" max="20">
+    <button class="btn btn-secondary" onclick="applyRange()" style="margin-bottom:8px">Apply Range</button>
+
+    <div class="divider"></div>
+    <div class="sec-label">Actions</div>
+    <button class="btn btn-secondary" onclick="undoStroke()">↩ Undo</button>
+    <button class="btn btn-danger" onclick="clearAll()">✕ Clear All</button>
+    <button class="btn btn-primary" onclick="analyzeSignal()">⚡ Analyze</button>
+
+    <div class="divider"></div>
+    <div class="sec-label">Strokes (<span id="stroke-count">0</span>)</div>
+    <div class="stroke-list" id="stroke-list">—</div>
+
+    <div class="sec-label">Equation</div>
+    <div class="output-box" id="eq-out">Draw a signal, then Analyze.</div>
+
+  </div>
+
+  <!-- CANVAS -->
+  <div class="canvas-wrap">
+
+    <!-- Floating toolbar -->
+    <div class="float-toolbar">
+      <button class="float-btn active" id="fb-line" onclick="setTool('line');setFB('line')"">/ Line</button>
+      <button class="float-btn" id="fb-draw" onclick="setTool('draw');setFB('draw')">✏ Free</button>
+      <div class="float-sep"></div>
+      <button class="float-btn" id="fb-step" onclick="setTool('step');setFB('step')">⌐ Step</button>
+      <button class="float-btn" id="fb-ramp" onclick="setTool('ramp');setFB('ramp')">⟋ Ramp</button>
+      <button class="float-btn" id="fb-impulse" onclick="setTool('impulse');setFB('impulse')">↑ Impulse</button>
+      <div class="float-sep"></div>
+      <button class="float-btn" id="fb-erase" onclick="setTool('erase');setFB('erase')">⌫ Erase</button>
+      <div class="float-sep"></div>
+      <button class="float-btn" onclick="toggleGrid()" id="fb-grid">⊞ Grid</button>
+      <button class="float-btn" onclick="undoStroke()">↩</button>
+      <button class="float-btn" onclick="clearAll()" style="color:var(--accent2)">✕</button>
+    </div>
+
+    <canvas id="open-canvas"></canvas>
+
+    <!-- Snap badge -->
+    <div class="snap-badge" id="snap-badge">⊙ Snapped</div>
+
+    <!-- Cursor info -->
+    <div class="cursor-info">
+      t = <span id="cur-t">—</span> &nbsp;|&nbsp;
+      x = <span id="cur-x">—</span> &nbsp;|&nbsp;
+      tool: <span id="cur-tool" style="color:var(--accent)">line</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const PI = Math.PI;
+const canvas = document.getElementById('open-canvas');
+const ctx = canvas.getContext('2d');
+
+let viewXRange = 10;
+let viewYRange = 4;
+let showGrid = true;
+let currentTool = 'line';
+let currentColor = '#00d4ff';
+let strokeWidth = 2.5;
+
+let drawStrokes = [];
+let undoStack = [];
+let liveStroke = [];
+let isDrawing = false;
+let startPt = null;
+
+// ── resize ──
+function resize() {
+  const wrap = canvas.parentElement;
+  canvas.width = wrap.offsetWidth;
+  canvas.height = wrap.offsetHeight;
+  redraw();
+}
+window.addEventListener('resize', resize);
+
+// ── coord helpers ──
+function d2c(x, y) {
+  const w = canvas.width, h = canvas.height;
+  return {
+    px: w/2 + (x / viewXRange) * (w/2 - 44),
+    py: h/2 - (y / viewYRange) * (h/2 - 44)
+  };
+}
+function c2d(px, py) {
+  const w = canvas.width, h = canvas.height;
+  return {
+    x: (px - w/2) / (w/2 - 44) * viewXRange,
+    y: (h/2 - py) / (h/2 - 44) * viewYRange
+  };
+}
+
+function snap(d) {
+  const sx = viewXRange * 0.045;
+  const sy = viewYRange * 0.045;
+  const rx = Math.round(d.x), ry = Math.round(d.y);
+  const snapX = Math.abs(d.x - rx) < sx;
+  const snapY = Math.abs(d.y - ry) < sy;
+  return {
+    x: snapX ? rx : d.x,
+    y: snapY ? ry : d.y,
+    didSnapX: snapX, didSnapY: snapY
+  };
+}
+
+function getPoint(e) {
+  const rect = canvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const py = (e.clientY - rect.top) * (canvas.height / rect.height);
+  return snap(c2d(px, py));
+}
+
+// ── draw axes ──
+function drawAxes() {
+  const w = canvas.width, h = canvas.height;
+  ctx.fillStyle = '#080c12';
+  ctx.fillRect(0, 0, w, h);
+
+  if (showGrid) {
+    ctx.strokeStyle = '#141f2e';
+    ctx.lineWidth = 1;
+    const xstep = viewXRange <= 10 ? 1 : viewXRange <= 20 ? 2 : 5;
+    const ystep = viewYRange <= 4 ? 1 : viewYRange <= 10 ? 2 : 5;
+    for (let x = -viewXRange; x <= viewXRange; x += xstep) {
+      const p = d2c(x, 0);
+      ctx.beginPath(); ctx.moveTo(p.px, 30); ctx.lineTo(p.px, h-30); ctx.stroke();
+    }
+    for (let y = -viewYRange; y <= viewYRange; y += ystep) {
+      const p = d2c(0, y);
+      ctx.beginPath(); ctx.moveTo(30, p.py); ctx.lineTo(w-30, p.py); ctx.stroke();
+    }
+  }
+
+  // Axes
+  ctx.strokeStyle = '#2a3d52';
+  ctx.lineWidth = 1.5;
+  const o = d2c(0,0);
+  ctx.beginPath(); ctx.moveTo(30, o.py); ctx.lineTo(w-20, o.py); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(o.px, 20); ctx.lineTo(o.px, h-20); ctx.stroke();
+
+  // Arrows
+  ctx.fillStyle = '#2a3d52';
+  ctx.beginPath(); ctx.moveTo(w-20,o.py); ctx.lineTo(w-28,o.py-4); ctx.lineTo(w-28,o.py+4); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(o.px,20); ctx.lineTo(o.px-4,28); ctx.lineTo(o.px+4,28); ctx.fill();
+
+  // Ticks + labels
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.fillStyle = '#3a5068';
+  const xstep = viewXRange <= 10 ? 1 : viewXRange <= 20 ? 2 : 5;
+  const ystep = viewYRange <= 4 ? 1 : viewYRange <= 10 ? 2 : 5;
+  ctx.textAlign = 'center';
+  for (let x = -viewXRange; x <= viewXRange; x += xstep) {
+    if (x === 0) continue;
+    const p = d2c(x, 0);
+    ctx.fillText(x, p.px, o.py + 14);
+    ctx.strokeStyle = '#2a3d52'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(p.px, o.py-3); ctx.lineTo(p.px, o.py+3); ctx.stroke();
+  }
+  ctx.textAlign = 'right';
+  for (let y = -viewYRange; y <= viewYRange; y += ystep) {
+    if (y === 0) continue;
+    const p = d2c(0, y);
+    ctx.fillText(y, o.px-6, p.py+3);
+    ctx.strokeStyle = '#2a3d52'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(o.px-3, p.py); ctx.lineTo(o.px+3, p.py); ctx.stroke();
+  }
+  ctx.textAlign = 'right'; ctx.fillText('0', o.px-5, o.py+14);
+  ctx.fillStyle = '#3a5068'; ctx.font = '11px JetBrains Mono, monospace';
+  ctx.textAlign = 'left'; ctx.fillText('t', w-26, o.py-8);
+  ctx.textAlign = 'center'; ctx.fillText('x', o.px+14, 22);
+}
+
+// ── draw strokes ──
+function drawAllStrokes() {
+  const o = d2c(0,0);
+  for (const s of drawStrokes) {
+    if (!s.pts || s.pts.length < 2) continue;
+
+    // Check if impulse (vertical)
+    const isImpulse = s.pts.length === 2 && Math.abs(s.pts[0].x - s.pts[1].x) < 0.01;
+    if (isImpulse) {
+      const p0 = d2c(s.pts[0].x, s.pts[0].y);
+      const p1 = d2c(s.pts[1].x, s.pts[1].y);
+      ctx.strokeStyle = s.color; ctx.lineWidth = s.width;
+      ctx.beginPath(); ctx.moveTo(p0.px, o.py); ctx.lineTo(p1.px, p1.py); ctx.stroke();
+      // arrowhead
+      ctx.fillStyle = s.color;
+      ctx.beginPath(); ctx.moveTo(p1.px, p1.py); ctx.lineTo(p1.px-5,p1.py+10); ctx.lineTo(p1.px+5,p1.py+10); ctx.closePath(); ctx.fill();
+      // label
+      ctx.font = '10px JetBrains Mono'; ctx.fillStyle = s.color; ctx.textAlign = 'center';
+      ctx.fillText(`δ(t${s.pts[0].x!==0?(s.pts[0].x>0?'−'+s.pts[0].x:'+'+Math.abs(s.pts[0].x)):''}), A=${s.pts[1].y}`, p1.px, p1.py - 10);
+      continue;
+    }
+
+    ctx.beginPath();
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = s.width;
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    for (let i = 0; i < s.pts.length; i++) {
+      const p = d2c(s.pts[i].x, s.pts[i].y);
+      i === 0 ? ctx.moveTo(p.px, p.py) : ctx.lineTo(p.px, p.py);
+    }
+    ctx.stroke();
+
+    // Fill under
+    ctx.globalAlpha = 0.05;
+    ctx.fillStyle = s.color;
+    const ps = d2c(s.pts[0].x, 0);
+    const pe = d2c(s.pts[s.pts.length-1].x, 0);
+    ctx.lineTo(pe.px, o.py); ctx.lineTo(ps.px, o.py); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Endpoint dots
+    const pf = d2c(s.pts[0].x, s.pts[0].y);
+    const pl = d2c(s.pts[s.pts.length-1].x, s.pts[s.pts.length-1].y);
+    ctx.beginPath(); ctx.arc(pf.px, pf.py, 3.5, 0, 2*PI); ctx.fillStyle = s.color; ctx.fill();
+    ctx.beginPath(); ctx.arc(pl.px, pl.py, 3.5, 0, 2*PI); ctx.fillStyle = s.color; ctx.fill();
+  }
+}
+
+function drawSnapIndicator(s) {
+  if (!s.didSnapX && !s.didSnapY) return;
+  const p = d2c(s.x, s.y);
+  ctx.beginPath(); ctx.arc(p.px, p.py, 9, 0, 2*PI);
+  ctx.strokeStyle = 'rgba(255,204,68,0.85)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.beginPath(); ctx.arc(p.px, p.py, 2.5, 0, 2*PI);
+  ctx.fillStyle = '#ffcc44'; ctx.fill();
+  ctx.strokeStyle = 'rgba(255,204,68,0.35)'; ctx.lineWidth = 1;
+  ctx.setLineDash([3,3]);
+  if (s.didSnapX) {
+    ctx.beginPath(); ctx.moveTo(p.px,p.py-16); ctx.lineTo(p.px,p.py+16); ctx.stroke();
+  }
+  if (s.didSnapY) {
+    ctx.beginPath(); ctx.moveTo(p.px-16,p.py); ctx.lineTo(p.px+16,p.py); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.font = '9px JetBrains Mono'; ctx.fillStyle = '#ffcc44'; ctx.textAlign = 'left';
+  ctx.fillText(`(${s.x}, ${s.y})`, p.px+13, p.py-7);
+}
+
+function redraw(livePreview=null, snapPt=null) {
+  drawAxes();
+  drawAllStrokes();
+  if (livePreview) {
+    ctx.strokeStyle = currentColor + '88';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath();
+    ctx.moveTo(livePreview.x1, livePreview.y1);
+    ctx.lineTo(livePreview.x2, livePreview.y2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // start dot
+    ctx.beginPath(); ctx.arc(livePreview.x1, livePreview.y1, 3.5, 0, 2*PI);
+    ctx.fillStyle = currentColor + 'aa'; ctx.fill();
+  }
+  if (livePreview && currentTool === 'draw' && livePreview.pts) {
+    ctx.beginPath();
+    ctx.strokeStyle = currentColor + '88'; ctx.lineWidth = strokeWidth;
+    ctx.setLineDash([]); ctx.lineJoin='round'; ctx.lineCap='round';
+    livePreview.pts.forEach((p,i) => {
+      const c = d2c(p.x,p.y);
+      i===0 ? ctx.moveTo(c.px,c.py) : ctx.lineTo(c.px,c.py);
+    });
+    ctx.stroke();
+  }
+  if (snapPt) drawSnapIndicator(snapPt);
+}
+
+// ── mouse events ──
+canvas.addEventListener('mousedown', e => {
+  const pt = getPoint(e);
+  if (currentTool === 'step') { placeStep(pt.x); return; }
+  if (currentTool === 'ramp') { placeRamp(pt.x); return; }
+  if (currentTool === 'impulse') { placeImpulse(pt.x, pt.y); return; }
+  if (currentTool === 'erase') { eraseAt(pt); return; }
+  isDrawing = true;
+  startPt = { x: pt.didSnapX?Math.round(pt.x):pt.x, y: pt.didSnapY?Math.round(pt.y):pt.y, ...pt };
+  liveStroke = [startPt];
+});
+
+canvas.addEventListener('mousemove', e => {
+  const pt = getPoint(e);
+  document.getElementById('cur-t').textContent = pt.x.toFixed(2);
+  document.getElementById('cur-x').textContent = pt.y.toFixed(3);
+
+  const snapBadge = document.getElementById('snap-badge');
+  if (pt.didSnapX || pt.didSnapY) {
+    snapBadge.classList.add('show');
+    snapBadge.textContent = `⊙ (${pt.x}, ${pt.y})`;
+  } else {
+    snapBadge.classList.remove('show');
+  }
+
+  if (!isDrawing) { redraw(null, pt); return; }
+
+  if (currentTool === 'line' && startPt) {
+    const p1 = d2c(startPt.x, startPt.y);
+    const p2 = d2c(pt.x, pt.y);
+    redraw({ x1: p1.px, y1: p1.py, x2: p2.px, y2: p2.py }, pt);
+  } else if (currentTool === 'draw') {
+    if (pt.x > liveStroke[liveStroke.length-1].x) liveStroke.push(pt);
+    redraw({ pts: liveStroke }, pt);
+  } else if (currentTool === 'erase') {
+    eraseAt(pt);
+  }
+});
+
+canvas.addEventListener('mouseup', e => {
+  if (!isDrawing) return;
+  isDrawing = false;
+  const pt = getPoint(e);
+  const endPt = { x: pt.didSnapX?Math.round(pt.x):pt.x, y: pt.didSnapY?Math.round(pt.y):pt.y, ...pt };
+
+  if (currentTool === 'line' && startPt) {
+    const dx = endPt.x - startPt.x, dy = endPt.y - startPt.y;
+    if (Math.sqrt(dx*dx+dy*dy) > 0.05) {
+      const N = 200, seg = [];
+      for (let i=0;i<=N;i++) {
+        const t=i/N;
+        seg.push({x: startPt.x+t*dx, y: startPt.y+t*dy});
+      }
+      pushStroke(seg);
+    }
+  } else if (currentTool === 'draw' && liveStroke.length > 1) {
+    pushStroke(liveStroke.slice());
+  }
+
+  startPt = null; liveStroke = [];
+  redraw();
+  updateStrokeList();
+});
+
+canvas.addEventListener('mouseleave', () => {
+  isDrawing = false; startPt = null; liveStroke = [];
+  document.getElementById('snap-badge').classList.remove('show');
+  redraw();
+});
+
+// ── stroke management ──
+function pushStroke(pts) {
+  undoStack.push(JSON.stringify(drawStrokes));
+  drawStrokes.push({ pts, color: currentColor, width: parseFloat(document.getElementById('stroke-width').value) || 2.5 });
+  updateStrokeList();
+}
+
+function undoStroke() {
+  if (undoStack.length > 0) {
+    drawStrokes = JSON.parse(undoStack.pop());
+    redraw(); updateStrokeList();
+  }
+}
+
+function clearAll() {
+  undoStack.push(JSON.stringify(drawStrokes));
+  drawStrokes = []; liveStroke = []; startPt = null;
+  document.getElementById('eq-out').textContent = 'Draw a signal, then Analyze.';
+  redraw(); updateStrokeList();
+}
+
+function updateStrokeList() {
+  document.getElementById('stroke-count').textContent = drawStrokes.length;
+  const el = document.getElementById('stroke-list');
+  if (!drawStrokes.length) { el.textContent = '—'; return; }
+  el.innerHTML = drawStrokes.map((s,i) => {
+    if (!s.pts || s.pts.length < 2) return '';
+    const x0 = s.pts[0].x.toFixed(1), x1 = s.pts[s.pts.length-1].x.toFixed(1);
+    return `<span style="color:${s.color}">S${i+1}</span> [${x0} → ${x1}]`;
+  }).join('<br>');
+}
+
+// ── quick tools ──
+function placeStep(t0) {
+  const t = Math.round(t0 * 10) / 10;
+  const pts = [];
+  for (let i=0; i<=400; i++) {
+    const x = -viewXRange + i*(viewXRange*2/400);
+    pts.push({x, y: x >= t ? 1 : 0});
+  }
+  pushStroke(pts); redraw(); updateStrokeList();
+}
+
+function placeRamp(t0) {
+  const t = Math.round(t0 * 10) / 10;
+  const pts = [];
+  for (let i=0; i<=400; i++) {
+    const x = -viewXRange + i*(viewXRange*2/400);
+    pts.push({x, y: x >= t ? x - t : 0});
+  }
+  pushStroke(pts); redraw(); updateStrokeList();
+}
+
+function placeImpulse(t0, amp) {
+  const t = Math.round(t0 * 2) / 2;
+  const a = Math.abs(amp) > 0.1 ? parseFloat(amp.toFixed(2)) : 1;
+  undoStack.push(JSON.stringify(drawStrokes));
+  drawStrokes.push({ pts: [{x:t,y:0},{x:t,y:a}], color: currentColor, width: 2.5 });
+  redraw(); updateStrokeList();
+}
+
+function eraseAt(pt) {
+  undoStack.push(JSON.stringify(drawStrokes));
+  const threshold = viewXRange * 0.15;
+  drawStrokes = drawStrokes.filter(s => {
+    if (!s.pts) return true;
+    return !s.pts.some(p => Math.abs(p.x - pt.x) < threshold && Math.abs(p.y - pt.y) < viewYRange * 0.2);
+  });
+  redraw(); updateStrokeList();
+}
+
+// ── analyze ──
+function fmtN(n) {
+  if (Number.isInteger(n) || Math.abs(n - Math.round(n)) < 0.005) return String(Math.round(n));
+  return n.toFixed(2);
+}
+function uTerm(s) {
+  if (Math.abs(s)<0.005) return 'u(t)';
+  return s>0 ? `u(t − ${fmtN(s)})` : `u(t + ${fmtN(Math.abs(s))})`;
+}
+function rTerm(s) {
+  if (Math.abs(s)<0.005) return 'r(t)';
+  return s>0 ? `r(t − ${fmtN(s)})` : `r(t + ${fmtN(Math.abs(s))})`;
+}
+
+function analyzeSignal() {
+  const segs = [];
+  for (const s of drawStrokes) {
+    if (!s.pts || s.pts.length < 2) continue;
+    const sorted = s.pts.slice().sort((a,b)=>a.x-b.x);
+    const x0=sorted[0].x, y0=sorted[0].y;
+    const x1=sorted[sorted.length-1].x, y1=sorted[sorted.length-1].y;
+    const dx=x1-x0;
+    if (Math.abs(dx)<0.08) continue;
+    const slope=(y1-y0)/dx;
+    const intercept=y0-slope*x0;
+    const yVar=sorted.reduce((a,p)=>a+(p.y-(slope*p.x+intercept))**2,0)/sorted.length;
+    const type = Math.abs(slope)<0.04&&yVar<0.04 ? 'constant' : yVar<0.1 ? 'linear' : 'curve';
+    segs.push({x0,y0,x1,y1,slope,intercept,type});
+  }
+  segs.sort((a,b)=>a.x0-b.x0);
+
+  if (!segs.length) { document.getElementById('eq-out').textContent='No signal to analyze.'; return; }
+
+  let prevM=0, prevVal=0;
+  const events=[];
+  for (let i=0;i<segs.length;i++) {
+    const s=segs[i];
+    const mAfter=s.type==='linear'?s.slope:0;
+    const prevT=i===0?s.x0:segs[i-1].x0;
+    const prevLineVal=i===0?0:(segs[i-1].y0+prevM*(s.x0-prevT));
+    events.push({t:s.x0, dm:mAfter-prevM, dc:s.y0-prevLineVal});
+    prevM=mAfter; prevVal=s.y0;
+  }
+  const last=segs[segs.length-1];
+  events.push({t:last.x1, dm:-(last.type==='linear'?last.slope:0), dc:-last.y1});
+
+  const terms=[];
+  for (const ev of events) {
+    if (Math.abs(ev.dm)>0.005) terms.push({coeff:ev.dm,kind:'r',shift:ev.t});
+    if (Math.abs(ev.dc)>0.005) terms.push({coeff:ev.dc,kind:'u',shift:ev.t});
+  }
+  terms.sort((a,b)=>Math.abs(a.shift-b.shift)>0.005?a.shift-b.shift:a.kind==='r'?-1:1);
+
+  if (!terms.length) { document.getElementById('eq-out').textContent='x(t) = 0'; return; }
+
+  let txt='x(t) = '; let isFirst=true;
+  for (const t of terms) {
+    const fn=t.kind==='u'?uTerm(t.shift):rTerm(t.shift);
+    const c=t.coeff, absC=Math.abs(c);
+    const sign=c<0?(isFirst?'−':' − '):(isFirst?'':' + ');
+    const coStr=Math.abs(absC-1)<0.005?'':fmtN(absC)+' ';
+    txt+=`${sign}${coStr}${fn}`; isFirst=false;
+  }
+  document.getElementById('eq-out').textContent=txt;
+}
+
+// ── controls ──
+function setTool(t) {
+  currentTool = t;
+  document.querySelectorAll('.tool-btn[id^=tool-]').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tool-'+t)?.classList.add('active');
+  document.getElementById('cur-tool').textContent = t;
+}
+
+function setFB(t) {
+  document.querySelectorAll('.float-btn[id^=fb-]').forEach(b=>b.classList.remove('active'));
+  document.getElementById('fb-'+t)?.classList.add('active');
+}
+
+function setColor(c) {
+  currentColor = c;
+  document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('active'));
+  document.querySelectorAll('.color-dot').forEach(d=>{ if(d.style.background===c||d.title===c) d.classList.add('active'); });
+}
+
+function toggleGrid() {
+  showGrid = !showGrid;
+  document.getElementById('fb-grid').classList.toggle('active', showGrid);
+  redraw();
+}
+
+function applyRange() {
+  viewXRange = parseFloat(document.getElementById('xrange').value)||10;
+  viewYRange = parseFloat(document.getElementById('yrange').value)||4;
+  redraw();
+}
+
+/// ── signal math ──
+function u(t) { return t >= 0 ? 1 : 0; }
+function r(t) { return t >= 0 ? t : 0; }
+function rect(t) { return Math.abs(t) <= 0.5 ? 1 : 0; }
+function tri(t) { return Math.abs(t) <= 1 ? 1 - Math.abs(t) : 0; }
+function sgn(t) { return t > 0 ? 1 : t < 0 ? -1 : 0; }
+function sinc(t) { return t === 0 ? 1 : Math.sin(PI*t)/(PI*t); }
+function delta(t) { return Math.abs(t) < 0.05 ? 20 : 0; }
+function exp(x) { return Math.exp(x); }
+function sin(x) { return Math.sin(x); }
+function cos(x) { return Math.cos(x); }
+function abs(x) { return Math.abs(x); }
+
+function sanitizeExpr(expr) {
+  return expr
+    .replace(/−/g, '-')
+    .replace(/·/g, '*')
+    .replace(/\u2212/g, '-')
+    .replace(/\u00B7/g, '*')
+    .replace(/\^/g, '**')
+    .replace(/(\d)\s+(u|r|delta|rect|tri|sgn|sinc|sin|cos|exp|abs)\(/g, '$1*$2(')
+    .replace(/\)\s+(u|r|delta|rect|tri|sgn|sinc|sin|cos|exp|abs)\(/g, ')*$1(')
+    .trim();
+}
+
+function evalExpr(expr, t) {
+  const clean = sanitizeExpr(expr);
+  try {
+    const fn = new Function('t','PI','u','r','delta','rect','tri','sgn','sinc','exp','sin','cos','abs',
+      `try { return (${clean}); } catch(e){ return 0; }`
+    );
+    return fn(t, PI, u, r, delta, rect, tri, sgn, sinc, exp, sin, cos, abs);
+  } catch(e) { return 0; }
+}
+
+function appendEqn(val) {
+  const inp = document.getElementById('eqn-input');
+  const cur = inp.value.trim();
+  inp.value = cur ? `${cur} + ${val}` : val;
+  inp.focus();
+}
+
+// Equation list: [{expr, color, tStart, tEnd, id}]
+let equations = [];
+let eqIdCounter = 0;
+
+function addEquation() {
+  const expr = document.getElementById('eqn-input').value.trim();
+  if (!expr) { showEqNotif('Enter an equation'); return; }
+
+  const tStart = parseFloat(document.getElementById('eq-tstart').value);
+  const tEnd = parseFloat(document.getElementById('eq-tend').value);
+  if (isNaN(tStart) || isNaN(tEnd) || tStart >= tEnd) {
+    showEqNotif('Invalid t range'); return;
+  }
+
+  const color = document.getElementById('eqn-color').value;
+  const id = ++eqIdCounter;
+  equations.push({ id, expr, color, tStart, tEnd });
+
+  // Clear input for next equation
+  document.getElementById('eqn-input').value = '';
+
+  renderEqnList();
+  redrawWithEquations();
+  showEqNotif(`Added: ${expr}`);
+}
+
+function removeEquation(id) {
+  equations = equations.filter(e => e.id !== id);
+  renderEqnList();
+  redrawWithEquations();
+}
+
+function renderEqnList() {
+  const el = document.getElementById('eqn-list');
+  if (!equations.length) { el.innerHTML = ''; return; }
+  el.innerHTML = equations.map(eq => `
+    <div style="display:flex;align-items:center;gap:5px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${eq.color};flex-shrink:0"></div>
+      <span style="font-family:var(--mono);font-size:0.62rem;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${eq.expr}">${eq.expr}</span>
+      <span style="font-family:var(--mono);font-size:0.58rem;color:var(--text-dim);white-space:nowrap">[${eq.tStart},${eq.tEnd}]</span>
+      <button onclick="toggleEqn(${eq.id})" title="Toggle"
+        style="background:none;border:none;cursor:pointer;font-size:0.7rem;color:${eq.visible===false?'var(--text-dim)':'var(--accent3)'};padding:0 2px">◉</button>
+      <button onclick="removeEquation(${eq.id})" title="Remove"
+        style="background:none;border:none;cursor:pointer;font-size:0.7rem;color:var(--accent2);padding:0 2px">✕</button>
+    </div>
+  `).join('');
+}
+
+function toggleEqn(id) {
+  const eq = equations.find(e => e.id === id);
+  if (eq) eq.visible = eq.visible === false ? true : false;
+  renderEqnList();
+  redrawWithEquations();
+}
+
+function redrawWithEquations() {
+  // Auto-expand view if needed
+  for (const eq of equations) {
+    if (eq.visible === false) continue;
+    if (eq.tStart < -viewXRange) viewXRange = Math.ceil(Math.abs(eq.tStart) * 1.1);
+    if (eq.tEnd > viewXRange) viewXRange = Math.ceil(eq.tEnd * 1.1);
+    // Sample to check y range
+    for (let i = 0; i <= 20; i++) {
+      const t = eq.tStart + i * (eq.tEnd - eq.tStart) / 20;
+      const y = evalExpr(eq.expr, t);
+      if (isFinite(y) && Math.abs(y) > viewYRange) viewYRange = Math.ceil(Math.abs(y) * 1.2);
+    }
+  }
+  redraw();
+}
+
+// Override redraw to also draw equations on top
+const _originalRedraw = redraw;
+redraw = function(livePreview=null, snapPt=null) {
+  drawAxes();
+  drawAllStrokes();
+  // Draw all equations
+  for (const eq of equations) {
+    if (eq.visible === false) continue;
+    const N = 1000;
+    const dt = (eq.tEnd - eq.tStart) / N;
+    ctx.beginPath();
+    ctx.strokeStyle = eq.color;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    let started = false;
+    for (let i = 0; i <= N; i++) {
+      const t = eq.tStart + i * dt;
+      const y = evalExpr(eq.expr, t);
+      if (!isFinite(y)) { started = false; continue; }
+      const p = d2c(t, y);
+      if (!started) { ctx.moveTo(p.px, p.py); started = true; }
+      else ctx.lineTo(p.px, p.py);
+    }
+    ctx.stroke();
+
+    // Label at end of equation
+    const lastT = eq.tEnd;
+    const lastY = evalExpr(eq.expr, lastT);
+    if (isFinite(lastY)) {
+      const lp = d2c(lastT, lastY);
+      ctx.font = '9px JetBrains Mono, monospace';
+      ctx.fillStyle = eq.color;
+      ctx.textAlign = 'left';
+      ctx.fillText(eq.expr.length > 16 ? eq.expr.slice(0,16)+'…' : eq.expr, lp.px + 6, lp.py - 5);
+    }
+  }
+  if (livePreview) {
+    ctx.strokeStyle = currentColor + '88';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath();
+    ctx.moveTo(livePreview.x1, livePreview.y1);
+    ctx.lineTo(livePreview.x2, livePreview.y2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(livePreview.x1, livePreview.y1, 3.5, 0, 2*PI);
+    ctx.fillStyle = currentColor + 'aa'; ctx.fill();
+  }
+  if (livePreview && currentTool === 'draw' && livePreview.pts) {
+    ctx.beginPath();
+    ctx.strokeStyle = currentColor + '88'; ctx.lineWidth = strokeWidth;
+    ctx.setLineDash([]); ctx.lineJoin='round'; ctx.lineCap='round';
+    livePreview.pts.forEach((p,i) => {
+      const c = d2c(p.x,p.y);
+      i===0 ? ctx.moveTo(c.px,c.py) : ctx.lineTo(c.px,c.py);
+    });
+    ctx.stroke();
+  }
+  if (snapPt) drawSnapIndicator(snapPt);
+};
+
+function showEqNotif(msg) {
+  const el = document.getElementById('snap-badge');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ── init ──
+resize();
+</script>
+</body>
+</html>

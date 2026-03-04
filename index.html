@@ -243,14 +243,14 @@
     overflow: hidden;
   }
 
-  .canvas-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    gap: 16px;
-    overflow-y: auto;
-  }
+.canvas-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 12px;
+  overflow-y: auto;
+}
 
   .canvas-area::-webkit-scrollbar { width: 4px; }
   .canvas-area::-webkit-scrollbar-track { background: transparent; }
@@ -495,6 +495,10 @@
   </div>
   <div style="display:flex;align-items:center;gap:12px">
     <div style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim)">Signal & Systems Plotter</div>
+       <a href="opencanvas.html" target="_blank"
+      style="background:var(--accent);color:var(--bg);font-family:var(--mono);font-size:0.68rem;font-weight:700;padding:5px 12px;border-radius:6px;text-decoration:none;letter-spacing:0.5px;transition:all 0.15s;white-space:nowrap"
+      onmouseover="this.style.background='#33ddff'"
+      onmouseout="this.style.background='var(--accent)'">✦ Open Canvas</a>
     <button id="info-btn" class="info-btn" onclick="document.getElementById('info-modal').style.display='flex'">
     <span style="color:#fff; font-weight:700;">?</span>&nbsp;info
   </button>
@@ -553,30 +557,47 @@
       </div>
 
       <!-- EQN → GRAPH PANEL -->
-      <div id="panel-eqn" class="panel">
-        <label>Signal Expression</label>
-<input type="text" id="eqn-input" placeholder="e.g. u(t), r(t), sin(2*PI*t), e^(-t)*u(t)" value="">
-        <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">
-          <div class="eq-chip" onclick="insertEqn('u(t)')">u(t)</div>
-          <div class="eq-chip" onclick="insertEqn('r(t)')">r(t)</div>
-          <div class="eq-chip" onclick="insertEqn('delta(t)')">δ(t)</div>
-          <div class="eq-chip" onclick="insertEqn('sin(2*PI*t)')">sin</div>
-          <div class="eq-chip" onclick="insertEqn('cos(2*PI*t)')">cos</div>
-          <div class="eq-chip" onclick="insertEqn('exp(-t)*u(t)')">e⁻ᵗu(t)</div>
-          <div class="eq-chip" onclick="insertEqn('t*exp(-t)*u(t)')">te⁻ᵗu(t)</div>
-          <div class="eq-chip" onclick="insertEqn('rect(t)')">rect(t)</div>
-          <div class="eq-chip" onclick="insertEqn('tri(t)')">tri(t)</div>
-          <div class="eq-chip" onclick="insertEqn('sgn(t)')">sgn(t)</div>
-        </div>
+<div id="panel-eqn" class="panel">
 
-        <div class="row2" style="margin-top:10px">
-          <div><label>t start</label><input type="number" id="t-start" value="-10" step="1"></div>
-          <div><label>t end</label><input type="number" id="t-end" value="10" step="1"></div>
-        </div>
+  <div id="cts-eqn-section">
+    <label>Signal Expression</label>
+    <input type="text" id="eqn-input" placeholder="e.g. u(t), r(t), sin(2*PI*t), e^(-t)*u(t)" value="">
+    <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">
+      <div class="eq-chip" onclick="insertEqn('u(t)')">u(t)</div>
+      <div class="eq-chip" onclick="insertEqn('r(t)')">r(t)</div>
+      <div class="eq-chip" onclick="insertEqn('delta(t)')">δ(t)</div>
+      <div class="eq-chip" onclick="insertEqn('sin(2*PI*t)')">sin</div>
+      <div class="eq-chip" onclick="insertEqn('cos(2*PI*t)')">cos</div>
+      <div class="eq-chip" onclick="insertEqn('exp(-t)*u(t)')">e⁻ᵗu(t)</div>
+      <div class="eq-chip" onclick="insertEqn('t*exp(-t)*u(t)')">te⁻ᵗu(t)</div>
+      <div class="eq-chip" onclick="insertEqn('rect(t)')">rect(t)</div>
+      <div class="eq-chip" onclick="insertEqn('tri(t)')">tri(t)</div>
+      <div class="eq-chip" onclick="insertEqn('sgn(t)')">sgn(t)</div>
+    </div>
+    <div class="row2" style="margin-top:10px">
+      <div><label>t start</label><input type="number" id="t-start" value="-10" step="1"></div>
+      <div><label>t end</label><input type="number" id="t-end" value="10" step="1"></div>
+    </div>
+    <button class="btn btn-primary" onclick="plotFromEquation()">▶ Plot Equation</button>
+    <div id="fmt-eq-eqn" class="fmt-equation" style="display:none"></div>
+  </div>
 
-        <button class="btn btn-primary" onclick="plotFromEquation()">▶ Plot Equation</button>
-        <div id="fmt-eq-eqn" class="fmt-equation" style="display:none"></div>
-      </div>
+  <!-- DTS Array Input — shown only in DTS mode -->
+  <div id="dts-array-section" style="display:none;margin-top:8px">
+    <div style="background:rgba(127,255,127,0.05);border:1px solid rgba(127,255,127,0.15);border-radius:6px;padding:10px;margin-bottom:8px">
+      <div style="font-family:var(--mono);font-size:0.65rem;color:var(--accent3);margin-bottom:8px">ARRAY PATTERN INPUT</div>
+      <label>Values (comma separated)</label>
+      <input type="text" id="dts-array-vals" placeholder="e.g. 0, 1, 2, 1, 0"
+        oninput="previewDTSArray()" style="font-family:var(--mono)">
+      <label style="margin-top:8px">Origin index (↑ bold)</label>
+      <input type="number" id="dts-array-origin" value="0" min="0" step="1"
+        oninput="previewDTSArray()">
+      <div id="dts-array-preview" style="margin-top:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;font-family:var(--mono);font-size:0.75rem;color:var(--accent3);min-height:36px;text-align:center;line-height:2;overflow-x:auto;white-space:nowrap"></div>
+      <button class="btn btn-primary" onclick="plotDTSArray()" style="margin-top:8px">▶ Plot Array</button>
+    </div>
+  </div>
+
+</div>
 
       <!-- TRANSFORM PANEL -->
       <div id="panel-ops" class="panel">
@@ -693,7 +714,7 @@ No signal loaded.
             <button class="icon-btn" onclick="copyEquation()">⎘ Copy Eq</button>
           </div>
         </div>
-        <canvas id="main-canvas" width="900" height="320"></canvas>
+        <canvas id="main-canvas" width="900" height="480"></canvas>
         <div class="canvas-info">
           Cursor: <span id="cursor-pos">—</span> &nbsp;|&nbsp;
           Amplitude: <span id="cursor-amp">—</span> &nbsp;|&nbsp;
@@ -2301,6 +2322,14 @@ function setMode(m) {
   document.getElementById('sb-mode').textContent = m.toUpperCase();
   document.getElementById('info-mode').textContent = m.toUpperCase();
   document.getElementById('dts-hint').style.display = m === 'dts' ? 'block' : 'none';
+  if (m === 'dts') {
+    document.getElementById('dts-array-section').style.display = 'block';
+    document.getElementById('cts-eqn-section').style.display = 'none';
+    previewDTSArray();
+  } else {
+    document.getElementById('dts-array-section').style.display = 'none';
+    document.getElementById('cts-eqn-section').style.display = 'block';
+  }
   clearCanvas('main');
 }
 
@@ -2479,18 +2508,114 @@ function showNotif(msg) {
 // ===== CANVAS RESIZE =====
 function resizeCanvases() {
   const area = document.getElementById('canvas-area');
-  const w = area.offsetWidth - 40;
+  const w = area.offsetWidth - 24;
+  // Height: fill most of viewport minus header, statusbar, panel header, info bar
+  const h = Math.max(400, window.innerHeight - 57 - 28 - 44 - 32);
   mainCanvas.width = Math.max(600, w);
+  mainCanvas.height = h;
   transformCanvas.width = Math.max(600, w);
+  transformCanvas.height = Math.max(360, h - 80);
   dualResult.width = Math.max(600, w);
-  // Dual input canvases — half width each minus gap
+  dualResult.height = Math.max(300, Math.floor(h * 0.55));
   const dualW = Math.max(380, Math.floor((w - 20) / 2));
+  const dualH = Math.max(300, Math.floor(h * 0.45));
   dualCanvas1.width = dualW;
+  dualCanvas1.height = dualH;
   dualCanvas2.width = dualW;
+  dualCanvas2.height = dualH;
   redrawMain();
 }
-
 window.addEventListener('resize', resizeCanvases);
+
+function previewDTSArray() {
+  const raw = document.getElementById('dts-array-vals').value;
+  const origin = parseInt(document.getElementById('dts-array-origin').value) || 0;
+  const preview = document.getElementById('dts-array-preview');
+
+  const vals = raw.split(',').map(v => v.trim()).filter(v => v !== '');
+  if (!vals.length) { preview.innerHTML = '—'; return; }
+
+  // Build display: each value with its n index below
+  // Origin index is bolded and has ↑ marker
+  let topRow = '', botRow = '';
+  vals.forEach((v, i) => {
+    const n = i - origin;
+    const isOrigin = i === origin;
+    const vStyle = isOrigin
+      ? `font-weight:700;color:var(--accent4);text-decoration:underline`
+      : `color:var(--accent3)`;
+    const nStyle = isOrigin
+      ? `font-weight:700;color:var(--accent4)`
+      : `color:var(--text-dim)`;
+
+    // pad to fixed width
+    const width = Math.max(v.length, String(n).length) + 2;
+    topRow += `<span style="${vStyle};display:inline-block;text-align:center;min-width:${width}ch">${v}</span>`;
+    botRow += `<span style="${nStyle};display:inline-block;text-align:center;min-width:${width}ch">${n}</span>`;
+  });
+
+  // Origin arrow
+  let arrowRow = '';
+  vals.forEach((v, i) => {
+    const n = i - origin;
+    const width = Math.max(v.length, String(n).length) + 2;
+    const isOrigin = i === origin;
+    arrowRow += `<span style="display:inline-block;text-align:center;min-width:${width}ch;color:var(--accent4)">${isOrigin ? '↑' : ' '}</span>`;
+  });
+
+  preview.innerHTML = `
+    <div style="font-size:0.8rem">${topRow}</div>
+    <div style="font-size:0.7rem">${arrowRow}</div>
+    <div style="font-size:0.65rem">${botRow}</div>
+    <div style="font-family:var(--mono);font-size:0.58rem;color:var(--text-dim);margin-top:4px">n index &nbsp;|&nbsp; bold = origin (n=0)</div>
+  `;
+}
+
+function plotDTSArray() {
+  const raw = document.getElementById('dts-array-vals').value;
+  const origin = parseInt(document.getElementById('dts-array-origin').value) || 0;
+
+  const vals = raw.split(',').map(v => parseFloat(v.trim())).filter(v => !isNaN(v));
+  if (!vals.length) { showNotif('Enter array values'); return; }
+
+  // Build DTS points: index relative to origin
+  const xs = [], ys = [];
+  vals.forEach((v, i) => {
+    xs.push(i - origin);
+    ys.push(v);
+  });
+
+  // Auto-expand x range if needed
+  const nMin = xs[0], nMax = xs[xs.length - 1];
+  if (Math.abs(nMin) > viewXRange || Math.abs(nMax) > viewXRange) {
+    viewXRange = Math.ceil(Math.max(Math.abs(nMin), Math.abs(nMax)) * 1.3);
+  }
+  const maxY = Math.max(...ys.map(Math.abs));
+  if (maxY > viewYRange) viewYRange = Math.ceil(maxY * 1.3);
+
+  drawStrokes = []; dtsPoints = [];
+  mainSignalData = { xs, ys };
+
+  // Build equation string for display
+  const nonzero = vals
+    .map((v, i) => ({ v, n: i - origin }))
+    .filter(p => Math.abs(p.v) > 0.001);
+  const eqParts = nonzero.map(p => {
+    const amp = Number.isInteger(p.v) ? String(p.v) : p.v.toFixed(2);
+    if (p.n === 0) return amp === '1' ? 'δ[n]' : `${amp}δ[n]`;
+    return amp === '1' ? `δ[n−${p.n}]` : `${amp}δ[n−${p.n}]`;
+  });
+  currentEquation = `x[n] = ${eqParts.join(' + ') || '0'}`;
+  document.getElementById('sb-eq').textContent = currentEquation;
+  document.getElementById('sb-signal').textContent = 'array';
+
+  redrawMain();
+  updateSignalInfo();
+  showNotif(`Plotted array, origin at index ${origin}`);
+
+  // Update preview
+  previewDTSArray();
+}
 
 // ===== INIT =====
 function init() {
