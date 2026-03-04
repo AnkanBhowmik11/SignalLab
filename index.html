@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="favicon.png">
 <title>SignalLab — Signal & Systems Plotter</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -203,6 +204,22 @@
     color: var(--accent2);
   }
   .btn-danger:hover { background: rgba(255,107,107,0.08); }
+
+  /* info button */
+  .info-btn {
+    background: #ff0000; /* bright red box */
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .info-btn:hover {
+    background: rgba(255,107,107,0.8);
+  }
 
   /* OUTPUT BOX */
   .output-box {
@@ -471,17 +488,16 @@
 <body>
 
 <header>
-  <div class="logo">Signal<span>Lab</span> <span style="font-size:0.6rem;margin-left:6px;color:var(--text-dim)">v2.0</span></div>
+  <div class="logo">Signal<span>Lab</span> <span style="font-size:0.6rem;margin-left:6px;color:var(--text-dim)">v1.0</span></div>
   <div class="mode-tabs">
     <button class="mode-tab active" onclick="setMode('cts')">CTS x(t)</button>
     <button class="mode-tab" onclick="setMode('dts')">DTS x[n]</button>
   </div>
   <div style="display:flex;align-items:center;gap:12px">
     <div style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim)">Signal & Systems Plotter</div>
-    <button id="info-btn" onclick="document.getElementById('info-modal').style.display='flex'"
-  style="background:none;border:1px solid var(--border);border-radius:50%;width:26px;height:26px;color:red;font-family:var(--mono);font-size:0.8rem;cursor:pointer;transition:all 0.15s;flex-shrink:0;display:flex;align-items:center;justify-content:center"
-  onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-  onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">?</button>
+    <button id="info-btn" class="info-btn" onclick="document.getElementById('info-modal').style.display='flex'">
+    <span style="color:#fff; font-weight:700;">?</span>&nbsp;info
+  </button>
   </div>
 </header>
 
@@ -790,6 +806,7 @@ function cos(x) { return Math.cos(x); }
 function abs(x) { return Math.abs(x); }
 
 function evalSignal(expr, t) {
+  expr = sanitizeExpr(expr);   // ← add this line at top
   try {
     const fn = new Function('t','PI','u','r','delta','rect','tri','sgn','sinc','exp','sin','cos','abs',
       `try { return (${expr}); } catch(e){ return 0; }`
@@ -1365,7 +1382,8 @@ function insertEqn(val) {
 }
 
 function plotFromEquation() {
-  const expr = document.getElementById('eqn-input').value.trim();
+const raw = document.getElementById('eqn-input').value.trim();
+  const expr = sanitizeExpr(raw);   // ← add this
   const tStart = parseFloat(document.getElementById('t-start').value);
   const tEnd = parseFloat(document.getElementById('t-end').value);
 
@@ -1383,6 +1401,20 @@ function plotFromEquation() {
   redrawMain();
   updateSignalInfo();
   showNotif(`Plotted: ${expr}`);
+  
+}
+function sanitizeExpr(expr) {
+  return expr
+    .replace(/−/g, '-')           // unicode minus → ASCII
+    .replace(/·/g, '*')           // unicode dot → asterisk
+    .replace(/\u2212/g, '-')
+    .replace(/\u00B7/g, '*')
+    .replace(/\s+/g, ' ')
+    .trim()
+    // implicit multiplication: "2 u(" → "2*u(",  "2 r(" → "2*r("
+    .replace(/(\d)\s+(u|r|delta|rect|tri|sgn|sinc|sin|cos|exp|abs)\(/g, '$1*$2(')
+    // also handle ") u(" → ")*u(" for chained terms like exp(-t)*u(t) written as "exp(-t) u(t)"
+    .replace(/\)\s+(u|r|delta|rect|tri|sgn|sinc|sin|cos|exp|abs)\(/g, ')*$1(');
 }
 
 // ===== ANALYZE SIGNAL =====
@@ -2249,8 +2281,15 @@ function exportCanvas() {
   showNotif('Canvas exported!');
 }
 
+// remove whitespace characters, including non-breaking and zero-width ones
+function cleanEquationString(str) {
+  // \s covers regular spaces, tabs, newlines; add known unicode spaces explicitly
+  return str.replace(/[\s\u00A0\u200B\u200C\u200D\u200E\u200F\u2028\u2029\u202F\u205F\u3000]+/g, '');
+}
+
 function copyEquation() {
-  const eq = currentEquation || '—';
+  const raw = currentEquation || '—';
+  const eq = cleanEquationString(raw);
   navigator.clipboard.writeText(eq).then(()=>showNotif('Equation copied: '+eq));
 }
 
