@@ -1,0 +1,2355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignalLab — Signal & Systems Plotter</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e14;
+    --surface: #111720;
+    --surface2: #161d28;
+    --border: #1e2d3d;
+    --accent: #00d4ff;
+    --accent2: #ff6b6b;
+    --accent3: #7fff7f;
+    --accent4: #ffcc44;
+    --text: #c9d4e0;
+    --text-dim: #556070;
+    --text-bright: #e8f0f8;
+    --grid: #1a2535;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--text-dim); font-weight: 300; }
+
+  .mode-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .mode-tab {
+    padding: 6px 16px;
+    border-radius: 5px;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    cursor: pointer;
+    color: var(--text-dim);
+    transition: all 0.2s;
+    border: none;
+    background: none;
+  }
+  .mode-tab.active {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 700;
+  }
+
+  /* LAYOUT */
+  .app {
+    display: grid;
+    grid-template-columns: 25% 1fr;
+    height: calc(100vh - 57px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.section {
+  border-bottom: 1px solid var(--border);
+  padding: 16px;
+  overflow: visible;
+}
+  .section-title {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* TOOL BUTTONS */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .tool-btn {
+    padding: 8px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .tool-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .tool-btn.active { border-color: var(--accent); background: rgba(0,212,255,0.08); color: var(--accent); }
+  .tool-btn.danger:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* INPUTS */
+  label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    margin-top: 10px;
+  }
+  label:first-of-type { margin-top: 0; }
+
+  input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-bright);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    padding: 7px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 52px; }
+
+  select option { background: var(--surface); }
+
+  .btn {
+    width: 100%;
+    padding: 9px;
+    border-radius: 6px;
+    border: none;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 8px;
+    letter-spacing: 0.5px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .btn-primary:hover { background: #33ddff; }
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+  }
+  .btn-secondary:hover { background: rgba(0,212,255,0.08); }
+  .btn-danger {
+    background: transparent;
+    border: 1px solid var(--accent2);
+    color: var(--accent2);
+  }
+  .btn-danger:hover { background: rgba(255,107,107,0.08); }
+
+  /* OUTPUT BOX */
+  .output-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--accent3);
+    min-height: 48px;
+    white-space: pre-wrap;
+    line-height: 1.6;
+    margin-top: 8px;
+  }
+
+  /* MAIN CANVAS AREA */
+  .main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .canvas-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .canvas-area::-webkit-scrollbar { width: 4px; }
+  .canvas-area::-webkit-scrollbar-track { background: transparent; }
+  .canvas-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .graph-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .graph-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .graph-title {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+  .graph-title span { color: var(--accent); }
+
+  .graph-actions { display: flex; gap: 6px; }
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  canvas {
+    display: block;
+    cursor: crosshair;
+    background: var(--bg);
+  }
+
+  .canvas-info {
+    padding: 6px 16px;
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 20px;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-dim);
+  }
+  .canvas-info span { color: var(--text); }
+
+  /* TWO COLUMN GRAPHS */
+  .dual-canvas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* STATUS BAR */
+  .statusbar {
+    height: 28px;
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 20px;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .statusbar .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent3);
+    display: inline-block;
+  }
+
+  /* BADGE */
+  .badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    font-weight: 700;
+    background: rgba(0,212,255,0.12);
+    color: var(--accent);
+    border: 1px solid rgba(0,212,255,0.2);
+  }
+  .badge.cts { background: rgba(0,212,255,0.12); color: var(--accent); border-color: rgba(0,212,255,0.2); }
+  .badge.dts { background: rgba(127,255,127,0.1); color: var(--accent3); border-color: rgba(127,255,127,0.2); }
+
+  /* TABS inside sidebar */
+  .sub-tabs {
+    display: flex;
+    gap: 0;
+    background: var(--bg);
+    border-radius: 6px;
+    padding: 3px;
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sub-tab {
+    flex: 1;
+    text-align: center;
+    padding: 5px;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    cursor: pointer;
+    border-radius: 4px;
+    color: var(--text-dim);
+    border: none;
+    background: none;
+    transition: all 0.2s;
+  }
+  .sub-tab.active {
+    background: var(--surface);
+    color: var(--text-bright);
+    border: 1px solid var(--border);
+  }
+
+  /* AFTER */
+.panel { 
+  display: none; 
+  width: 100%;
+}
+.panel.active { 
+  display: block;
+  width: 100%;
+}
+
+  /* Equation preview */
+  .eq-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--accent4);
+    margin: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .eq-chip:hover { border-color: var(--accent4); }
+
+  .equation-display {
+    background: var(--bg);
+    border: 1px solid rgba(0,212,255,0.15);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--accent4);
+    text-align: center;
+    margin-top: 8px;
+    min-height: 40px;
+    line-height: 1.8;
+  }
+
+  /* Notification */
+  .notif {
+    position: fixed;
+    bottom: 40px;
+    right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--accent);
+    z-index: 999;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+  .notif.show { opacity: 1; transform: translateY(0); }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .row2 label { margin-top: 0; }
+
+  /* FORMATTED EQUATION */
+  .fmt-equation {
+    margin-top: 8px;
+    background: var(--bg);
+    border: 1px solid rgba(255,204,68,0.2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-align: center;
+    color: var(--accent4);
+    line-height: 1.9;
+    letter-spacing: 0.02em;
+    min-height: 44px;
+    overflow-x: auto;
+  }
+
+  .copy-rhs-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  cursor: pointer;
+  margin-left: 8px;
+  font-family: var(--mono);
+  transition: all 0.15s;
+  vertical-align: middle;
+}
+.copy-rhs-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  .fmt-equation .eq-main { font-size: 1.05rem; font-family: 'Georgia', serif; }
+  .fmt-equation .eq-label { font-family: var(--mono); font-size: 0.6rem; color: var(--text-dim); display:block; margin-top:2px; }
+  sup { font-size: 0.65em; vertical-align: super; }
+  sub { font-size: 0.65em; vertical-align: sub; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">Signal<span>Lab</span> <span style="font-size:0.6rem;margin-left:6px;color:var(--text-dim)">v2.0</span></div>
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="setMode('cts')">CTS x(t)</button>
+    <button class="mode-tab" onclick="setMode('dts')">DTS x[n]</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim)">Signal & Systems Plotter</div>
+    <button id="info-btn" onclick="document.getElementById('info-modal').style.display='flex'"
+  style="background:none;border:1px solid var(--border);border-radius:50%;width:26px;height:26px;color:var(--text-dim);font-family:var(--mono);font-size:0.8rem;cursor:pointer;transition:all 0.15s;flex-shrink:0;display:flex;align-items:center;justify-content:center"
+  onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+  onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">?</button>
+  </div>
+</header>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- OPERATIONS PANEL -->
+    <div class="section">
+      <div class="section-title">Operations</div>
+      <div class="sub-tabs">
+        <button class="sub-tab active" onclick="switchPanel('draw')">Draw</button>
+        <button class="sub-tab" onclick="switchPanel('eqn')">Eqn→Graph</button>
+        <button class="sub-tab" onclick="switchPanel('ops')">Transform</button>
+        <button class="sub-tab" onclick="switchPanel('dual')">Dual Ops</button>
+      </div>
+
+      <!-- DRAW PANEL -->
+      <div id="panel-draw" class="panel active">
+        <label>Drawing Mode</label>
+        <div class="tool-grid">
+<!-- AFTER -->
+<button class="tool-btn" id="tool-draw" onclick="setTool('draw')">✏ Freehand</button>
+<button class="tool-btn active" id="tool-line" onclick="setTool('line')">/ Line Seg</button>
+          <button class="tool-btn" id="tool-ramp" onclick="setTool('ramp')">⟋ Ramp</button>
+          <button class="tool-btn" id="tool-step" onclick="setTool('step')">⌐ Step</button>
+          <button class="tool-btn" id="tool-impulse" onclick="setTool('impulse')">↑ Impulse</button>
+          <button class="tool-btn danger" id="tool-erase" onclick="setTool('erase')">⌫ Erase</button>
+        </div>
+
+        <div id="dts-hint" style="display:none;margin-top:8px;background:rgba(127,255,127,0.06);border:1px solid rgba(127,255,127,0.15);border-radius:6px;padding:7px 10px;font-family:var(--mono);font-size:0.67rem;color:var(--accent3)">
+          DTS mode — <b>click</b> on integer positions to place stems. Each click adds a point.
+        </div>
+
+        <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim)">SEGMENTS</span>
+          <span id="seg-count" style="font-family:var(--mono);font-size:0.65rem;color:var(--accent)">0 strokes</span>
+        </div>
+        <div id="seg-list" style="margin-top:4px;max-height:72px;overflow-y:auto;font-family:var(--mono);font-size:0.62rem;color:var(--text-dim);line-height:1.7"></div>
+
+        <div id="conflict-warn" style="display:none;margin-top:6px;background:rgba(255,107,107,0.07);border:1px solid rgba(255,107,107,0.25);border-radius:6px;padding:7px 10px;font-family:var(--mono);font-size:0.67rem;color:var(--accent2)">
+          ⚠ Overlapping x-range detected — last stroke ignored.
+        </div>
+
+        <div class="tool-grid" style="margin-top:8px">
+          <button class="tool-btn danger" onclick="clearCanvas('main')">✕ Clear All</button>
+          <button class="tool-btn" onclick="undoStroke()">↩ Undo Stroke</button>
+        </div>
+
+        <button class="btn btn-primary" onclick="analyzeSignal()">⚡ Analyze Signal</button>
+        <div class="output-box" id="analysis-out">Draw a signal above, then click Analyze.</div>
+        <div id="fmt-eq-draw" class="fmt-equation" style="display:none"></div>
+      </div>
+
+      <!-- EQN → GRAPH PANEL -->
+      <div id="panel-eqn" class="panel">
+        <label>Signal Expression</label>
+<input type="text" id="eqn-input" placeholder="e.g. u(t), r(t), sin(2*PI*t), e^(-t)*u(t)" value="">
+        <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">
+          <div class="eq-chip" onclick="insertEqn('u(t)')">u(t)</div>
+          <div class="eq-chip" onclick="insertEqn('r(t)')">r(t)</div>
+          <div class="eq-chip" onclick="insertEqn('delta(t)')">δ(t)</div>
+          <div class="eq-chip" onclick="insertEqn('sin(2*PI*t)')">sin</div>
+          <div class="eq-chip" onclick="insertEqn('cos(2*PI*t)')">cos</div>
+          <div class="eq-chip" onclick="insertEqn('exp(-t)*u(t)')">e⁻ᵗu(t)</div>
+          <div class="eq-chip" onclick="insertEqn('t*exp(-t)*u(t)')">te⁻ᵗu(t)</div>
+          <div class="eq-chip" onclick="insertEqn('rect(t)')">rect(t)</div>
+          <div class="eq-chip" onclick="insertEqn('tri(t)')">tri(t)</div>
+          <div class="eq-chip" onclick="insertEqn('sgn(t)')">sgn(t)</div>
+        </div>
+
+        <div class="row2" style="margin-top:10px">
+          <div><label>t start</label><input type="number" id="t-start" value="-5" step="1"></div>
+          <div><label>t end</label><input type="number" id="t-end" value="5" step="1"></div>
+        </div>
+
+        <button class="btn btn-primary" onclick="plotFromEquation()">▶ Plot Equation</button>
+        <div id="fmt-eq-eqn" class="fmt-equation" style="display:none"></div>
+      </div>
+
+      <!-- TRANSFORM PANEL -->
+      <div id="panel-ops" class="panel">
+  <label>Time Transformation</label>
+  <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px">
+    <div style="font-family:var(--mono);font-size:0.68rem;color:var(--text-dim);margin-bottom:6px">x(t) → A · x(at + b)</div>
+    <div class="row2">
+      <div><label>a (scale)</label><input type="number" id="t-a" value="1" step="0.5"></div>
+      <div><label>b (shift)</label><input type="number" id="t-b" value="0" step="0.5"></div>
+    </div>
+    <div style="margin-top:8px">
+      <label>A (amplitude)</label>
+      <input type="number" id="t-amp" value="1" step="0.1">
+    </div>
+  </div>
+
+  <label>Quick Transforms</label>
+  <div class="tool-grid">
+    <button class="tool-btn" onclick="quickTransform('shift+1')">x(t+1)</button>
+    <button class="tool-btn" onclick="quickTransform('shift-1')">x(t−1)</button>
+    <button class="tool-btn" onclick="quickTransform('reverse')">x(−t)</button>
+    <button class="tool-btn" onclick="quickTransform('compress')">x(2t)</button>
+    <button class="tool-btn" onclick="quickTransform('expand')">x(t/2)</button>
+    <button class="tool-btn" onclick="quickTransform('flip+shift')">x(−t+1)</button>
+  </div>
+
+  <button class="btn btn-primary" onclick="applyTransform()">▶ Apply A·x(at+b)</button>
+  <button class="btn btn-secondary" onclick="overlayTransform()">⊕ Overlay Both</button>
+
+<div class="equation-display" id="transform-eq">—</div>
+<div id="fmt-eq-transform" class="fmt-equation" style="display:none"></div>
+</div>
+
+      <!-- DUAL OPS PANEL -->
+      <div id="panel-dual" class="panel">
+  <label>Input Mode</label>
+  <div class="sub-tabs" style="margin-bottom:10px">
+    <button class="sub-tab active" id="dual-mode-eqn" onclick="setDualInputMode('eqn')">Eqn Form</button>
+    <button class="sub-tab" id="dual-mode-graph" onclick="setDualInputMode('graph')">Draw Graph</button>
+  </div>
+
+  <label>Operation on x₁ & x₂</label>
+  <div class="tool-grid">
+    <button class="tool-btn active" id="op-add" onclick="setDualOp('add')">+ Add</button>
+    <button class="tool-btn" id="op-sub" onclick="setDualOp('sub')">− Sub</button>
+    <button class="tool-btn" id="op-mul" onclick="setDualOp('mul')">× Multiply</button>
+    <button class="tool-btn" id="op-conv" onclick="setDualOp('conv')">★ Convolve</button>
+  </div>
+
+  <div id="dual-eqn-inputs">
+    <label style="margin-top:10px">x₁ Signal</label>
+    <input type="text" id="dual-x1" placeholder="e.g. u(t), rect(t)" value="">
+    <label>x₂ Signal</label>
+    <input type="text" id="dual-x2" placeholder="e.g. exp(-t)*u(t)" value="">
+  </div>
+
+  <div id="dual-graph-inputs" style="display:none">
+    <div style="margin-top:10px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:0.67rem;color:var(--accent)">
+      Draw on the canvases on the right.<br>
+      <span style="color:var(--text-dim)">Active signal: </span><span id="dual-active-signal" style="color:var(--accent4)">x₁</span>
+    </div>
+    <div class="tool-grid" style="margin-top:8px">
+      <button class="tool-btn active" id="dual-target-1" onclick="setDualDrawTarget(1)">✏ Draw x₁</button>
+      <button class="tool-btn" id="dual-target-2" onclick="setDualDrawTarget(2)">✏ Draw x₂</button>
+    </div>
+    <div class="tool-grid" style="margin-top:6px">
+      <button class="tool-btn danger" onclick="dualStrokes1=[];dualStrokes2=[];redrawDualCanvas(1);redrawDualCanvas(2);">✕ Clear Both</button>
+      <button class="tool-btn" onclick="(dualDrawTarget===1?dualStrokes1:dualStrokes2).pop();redrawDualCanvas(dualDrawTarget)">↩ Undo</button>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="computeDualOp()">▶ Compute</button>
+</div>
+</div>
+
+    <!-- VIEW OPTIONS -->
+    <div class="section">
+      <div class="section-title">View</div>
+      <div class="tool-grid">
+        <button class="tool-btn" onclick="zoomIn()">＋ Zoom In</button>
+        <button class="tool-btn" onclick="zoomOut()">－ Zoom Out</button>
+        <button class="tool-btn" onclick="resetView()">⌂ Reset</button>
+        <button class="tool-btn" onclick="toggleGrid()">⊞ Grid</button>
+      </div>
+      <div class="row2" style="margin-top:10px">
+        <div><label>x range</label><input type="number" id="view-xrange" value="10" min="2" max="50"></div>
+        <div><label>y range</label><input type="number" id="view-yrange" value="4" min="1" max="20"></div>
+      </div>
+      <button class="btn btn-secondary" onclick="applyViewRange()">Apply Range</button>
+    </div>
+
+    <!-- SIGNAL INFO -->
+    <div class="section" style="flex:1">
+      <div class="section-title">Signal Info</div>
+      <div class="output-box" id="signal-info" style="color:var(--text);font-size:0.68rem">
+No signal loaded.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="canvas-area" id="canvas-area">
+      <!-- Single graph view -->
+      <div class="graph-panel" id="main-panel">
+        <div class="graph-header">
+          <div class="graph-title">
+            <span id="main-label">x(t)</span> — Main Signal
+            <span class="badge cts" id="mode-badge">CTS</span>
+          </div>
+          <div class="graph-actions">
+            <button class="icon-btn" onclick="exportCanvas()">↓ Export</button>
+            <button class="icon-btn" onclick="copyEquation()">⎘ Copy Eq</button>
+          </div>
+        </div>
+        <canvas id="main-canvas" width="900" height="320"></canvas>
+        <div class="canvas-info">
+          Cursor: <span id="cursor-pos">—</span> &nbsp;|&nbsp;
+          Amplitude: <span id="cursor-amp">—</span> &nbsp;|&nbsp;
+          Mode: <span id="info-mode">CTS</span>
+        </div>
+      </div>
+
+      <!-- Transformed graph -->
+      <div class="graph-panel" id="transform-panel" style="display:none">
+        <div class="graph-header">
+          <div class="graph-title"><span id="transform-label">x(at+b)</span> — Transformed</div>
+          <div class="graph-actions">
+            <button class="icon-btn" onclick="closeTransformPanel()">✕ Close</button>
+          </div>
+        </div>
+        <canvas id="transform-canvas" width="900" height="280"></canvas>
+        <div class="canvas-info">
+          Equation: <span id="transform-eq-info" style="color:var(--accent4)">—</span>
+        </div>
+      </div>
+
+      <!-- Dual ops graphs -->
+      <div id="dual-panel" style="display:none">
+        <div class="dual-canvas">
+          <div class="graph-panel">
+            <div class="graph-header">
+              <div class="graph-title"><span style="color:var(--accent)">x₁(t)</span></div>
+            </div>
+            <canvas id="dual-canvas1" width="420" height="220"></canvas>
+          </div>
+          <div class="graph-panel">
+            <div class="graph-header">
+              <div class="graph-title"><span style="color:var(--accent2)">x₂(t)</span></div>
+            </div>
+            <canvas id="dual-canvas2" width="420" height="220"></canvas>
+          </div>
+        </div>
+        <div class="graph-panel" style="margin-top:16px">
+          <div class="graph-header">
+            <div class="graph-title"><span id="result-label" style="color:var(--accent3)">y(t) = x₁(t) + x₂(t)</span> — Result</div>
+            <div class="graph-actions">
+              <button class="icon-btn" onclick="closeDualPanel()">✕ Close</button>
+            </div>
+          </div>
+          <canvas id="dual-result" width="900" height="260"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="statusbar">
+      <span><span class="dot"></span> Ready</span>
+      <span>Mode: <span id="sb-mode" style="color:var(--accent)">CTS</span></span>
+      <span>Signal: <span id="sb-signal" style="color:var(--accent4)">—</span></span>
+      <span>Equation: <span id="sb-eq" style="color:var(--accent3)">—</span></span>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ===== STATE =====
+let mode = 'cts'; // cts or dts
+let currentTool = 'draw';
+let currentDualOp = 'add';
+let showGrid = true;
+let zoomLevel = 1;
+let viewXRange = 10;
+let viewYRange = 4;
+let isDrawing = false;
+
+// Multi-stroke: array of segments, each is [{x,y}...]
+let drawStrokes = []; // CTS strokes
+let dtsPoints = [];   // DTS: [{x(int), y}]
+let strokeUndoStack = []; // for undo
+
+let currentEquation = '';
+let mainSignalData = null; // {xs, ys} from equation plot
+
+// Canvas refs
+const mainCanvas = document.getElementById('main-canvas');
+const mc = mainCanvas.getContext('2d');
+const transformCanvas = document.getElementById('transform-canvas');
+const tc = transformCanvas.getContext('2d');
+const dualCanvas1 = document.getElementById('dual-canvas1');
+const dc1 = dualCanvas1.getContext('2d');
+const dualCanvas2 = document.getElementById('dual-canvas2');
+const dc2 = dualCanvas2.getContext('2d');
+const dualResult = document.getElementById('dual-result');
+const dr = dualResult.getContext('2d');
+
+// ===== SIGNAL MATH =====
+const PI = Math.PI;
+
+function u(t) { return t >= 0 ? 1 : 0; }
+function r(t) { return t >= 0 ? t : 0; }
+function delta(t, dt) {
+  // approximate impulse
+  return (Math.abs(t) < dt * 0.5) ? 1/dt : 0;
+}
+function rect(t) { return Math.abs(t) <= 0.5 ? 1 : 0; }
+function tri(t) { return Math.abs(t) <= 1 ? 1 - Math.abs(t) : 0; }
+function sgn(t) { return t > 0 ? 1 : t < 0 ? -1 : 0; }
+function sinc(t) { return t === 0 ? 1 : Math.sin(PI*t)/(PI*t); }
+function exp(x) { return Math.exp(x); }
+function sin(x) { return Math.sin(x); }
+function cos(x) { return Math.cos(x); }
+function abs(x) { return Math.abs(x); }
+
+function evalSignal(expr, t) {
+  try {
+    const fn = new Function('t','PI','u','r','delta','rect','tri','sgn','sinc','exp','sin','cos','abs',
+      `try { return (${expr}); } catch(e){ return 0; }`
+    );
+    return fn(t, PI, u, r, (x)=>delta(x,0.05), rect, tri, sgn, sinc, exp, sin, cos, abs);
+  } catch(e) { return 0; }
+}
+
+function generateSignal(expr, tStart, tEnd, N=1000) {
+  const xs = [], ys = [];
+  const dt = (tEnd - tStart) / N;
+  for (let i = 0; i <= N; i++) {
+    const t = tStart + i * dt;
+    xs.push(t);
+    ys.push(evalSignal(expr, t));
+  }
+  return {xs, ys};
+}
+
+function generateDTS(expr, nStart, nEnd) {
+  const xs = [], ys = [];
+  for (let n = nStart; n <= nEnd; n++) {
+    xs.push(n);
+    ys.push(evalSignal(expr, n));
+  }
+  return {xs, ys};
+}
+
+// ===== CANVAS HELPERS =====
+function getCanvasSize(canvas) {
+  return {w: canvas.offsetWidth || canvas.width, h: canvas.height};
+}
+
+function dataToCanvas(x, y, canvas, xrange, yrange) {
+  const w = canvas.width, h = canvas.height;
+  const cx = w/2, cy = h/2;
+  return {
+    px: cx + (x / xrange) * (w/2 - 30),
+    py: cy - (y / yrange) * (h/2 - 30)
+  };
+}
+
+function canvasToData(px, py, canvas, xrange, yrange) {
+  const w = canvas.width, h = canvas.height;
+  const cx = w/2, cy = h/2;
+  return {
+    x: (px - cx) / (w/2 - 30) * xrange,
+    y: (cy - py) / (h/2 - 30) * yrange
+  };
+}
+
+function drawAxes(ctx, canvas, xrange, yrange, label='t') {
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  // Background
+  ctx.fillStyle = '#080c12';
+  ctx.fillRect(0, 0, w, h);
+
+  if (showGrid) {
+    // Grid
+    ctx.strokeStyle = '#141f2e';
+    ctx.lineWidth = 1;
+    // vertical
+    const xstep = xrange <= 10 ? 1 : xrange <= 20 ? 2 : 5;
+    for (let x = -xrange; x <= xrange; x += xstep) {
+      const p = dataToCanvas(x, 0, canvas, xrange, yrange);
+      ctx.beginPath();
+      ctx.moveTo(p.px, 20);
+      ctx.lineTo(p.px, h - 20);
+      ctx.stroke();
+    }
+    // horizontal
+    const ystep = yrange <= 4 ? 1 : yrange <= 10 ? 2 : 5;
+    for (let y = -yrange; y <= yrange; y += ystep) {
+      const p = dataToCanvas(0, y, canvas, xrange, yrange);
+      ctx.beginPath();
+      ctx.moveTo(30, p.py);
+      ctx.lineTo(w - 30, p.py);
+      ctx.stroke();
+    }
+  }
+
+  // Axes
+  ctx.strokeStyle = '#304050';
+  ctx.lineWidth = 1.5;
+  // X axis
+  const ox = dataToCanvas(0, 0, canvas, xrange, yrange);
+  ctx.beginPath();
+  ctx.moveTo(20, ox.py);
+  ctx.lineTo(w-10, ox.py);
+  ctx.stroke();
+  // Y axis
+  ctx.beginPath();
+  ctx.moveTo(ox.px, 10);
+  ctx.lineTo(ox.px, h-10);
+  ctx.stroke();
+
+  // Arrows
+  ctx.fillStyle = '#304050';
+  // X arrow
+  ctx.beginPath();
+  ctx.moveTo(w-10, ox.py);
+  ctx.lineTo(w-18, ox.py-4);
+  ctx.lineTo(w-18, ox.py+4);
+  ctx.fill();
+  // Y arrow
+  ctx.beginPath();
+  ctx.moveTo(ox.px, 10);
+  ctx.lineTo(ox.px-4, 18);
+  ctx.lineTo(ox.px+4, 18);
+  ctx.fill();
+
+  // Tick labels
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.fillStyle = '#3a5068';
+  ctx.textAlign = 'center';
+  const xstep = xrange <= 10 ? 1 : xrange <= 20 ? 2 : 5;
+  for (let x = -xrange; x <= xrange; x += xstep) {
+    if (x === 0) continue;
+    const p = dataToCanvas(x, 0, canvas, xrange, yrange);
+    ctx.fillText(x, p.px, ox.py + 14);
+    // tick
+    ctx.strokeStyle = '#304050';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(p.px, ox.py-3);
+    ctx.lineTo(p.px, ox.py+3);
+    ctx.stroke();
+  }
+  const ystep = yrange <= 4 ? 1 : yrange <= 10 ? 2 : 5;
+  ctx.textAlign = 'right';
+  for (let y = -yrange; y <= yrange; y += ystep) {
+    if (y === 0) continue;
+    const p = dataToCanvas(0, y, canvas, xrange, yrange);
+    ctx.fillText(y, ox.px - 5, p.py + 3);
+    ctx.strokeStyle = '#304050';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(ox.px-3, p.py);
+    ctx.lineTo(ox.px+3, p.py);
+    ctx.stroke();
+  }
+
+  // Origin
+  ctx.textAlign = 'right';
+  ctx.fillText('0', ox.px-4, ox.py+14);
+
+  // Axis labels
+  ctx.fillStyle = '#4a6078';
+  ctx.font = '11px JetBrains Mono, monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(label, w-22, ox.py-8);
+  ctx.textAlign = 'center';
+  ctx.fillText('x', ox.px+14, 22);
+}
+
+function plotCTS(ctx, canvas, xs, ys, color='#00d4ff', xrange, yrange, fill=false) {
+  if (!xs || xs.length < 2) return;
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  let started = false;
+  for (let i = 0; i < xs.length; i++) {
+    const p = dataToCanvas(xs[i], ys[i], canvas, xrange, yrange);
+    if (!started) { ctx.moveTo(p.px, p.py); started = true; }
+    else ctx.lineTo(p.px, p.py);
+  }
+  ctx.stroke();
+  if (fill) {
+    const ox = dataToCanvas(0,0,canvas,xrange,yrange);
+    ctx.lineTo(dataToCanvas(xs[xs.length-1], 0, canvas, xrange, yrange).px, ox.py);
+    ctx.lineTo(dataToCanvas(xs[0], 0, canvas, xrange, yrange).px, ox.py);
+    ctx.closePath();
+    ctx.fillStyle = color.replace(')', ', 0.07)').replace('rgb', 'rgba').replace('#', 'rgba(');
+    // simple fill
+    ctx.globalAlpha = 0.07;
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function plotDTS(ctx, canvas, xs, ys, color='#7fff7f', xrange, yrange) {
+  const ox = dataToCanvas(0, 0, canvas, xrange, yrange);
+  for (let i = 0; i < xs.length; i++) {
+    const p = dataToCanvas(xs[i], ys[i], canvas, xrange, yrange);
+    // stem
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(p.px, ox.py);
+    ctx.lineTo(p.px, p.py);
+    ctx.stroke();
+    // circle
+    ctx.beginPath();
+    ctx.arc(p.px, p.py, 3.5, 0, 2*PI);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = '#080c12';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
+function plotImpulse(ctx, canvas, x0, amp, color, xrange, yrange) {
+  const ox = dataToCanvas(0,0,canvas,xrange,yrange);
+  const p = dataToCanvas(x0, amp, canvas, xrange, yrange);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(p.px, ox.py);
+  ctx.lineTo(p.px, p.py);
+  ctx.stroke();
+  // arrowhead
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(p.px, p.py);
+  ctx.lineTo(p.px-5, p.py+10);
+  ctx.lineTo(p.px+5, p.py+10);
+  ctx.closePath();
+  ctx.fill();
+}
+
+// ===== MAIN CANVAS DRAW =====
+function redrawMain() {
+  drawAxes(mc, mainCanvas, viewXRange, viewYRange, mode==='cts'?'t':'n');
+
+  if (mainSignalData) {
+    if (mode === 'cts') {
+      plotCTS(mc, mainCanvas, mainSignalData.xs, mainSignalData.ys, '#00d4ff', viewXRange, viewYRange, true);
+    } else {
+      plotDTS(mc, mainCanvas, mainSignalData.xs, mainSignalData.ys, '#7fff7f', viewXRange, viewYRange);
+    }
+    return;
+  }
+
+  if (mode === 'dts') {
+    // Render DTS click-points as stems
+    const ox = dataToCanvas(0, 0, mainCanvas, viewXRange, viewYRange);
+    for (const pt of dtsPoints) {
+      const p = dataToCanvas(pt.x, pt.y, mainCanvas, viewXRange, viewYRange);
+      mc.strokeStyle = '#7fff7f';
+      mc.lineWidth = 2;
+      mc.beginPath(); mc.moveTo(p.px, ox.py); mc.lineTo(p.px, p.py); mc.stroke();
+      mc.beginPath(); mc.arc(p.px, p.py, 4, 0, 2*PI);
+      mc.fillStyle = '#7fff7f'; mc.fill();
+      mc.strokeStyle = '#080c12'; mc.lineWidth = 1; mc.stroke();
+      // label value
+      mc.font = '9px JetBrains Mono, monospace';
+      mc.fillStyle = 'rgba(127,255,127,0.7)';
+      mc.textAlign = 'center';
+      mc.fillText(pt.y, p.px, p.py - 8);
+    }
+    return;
+  }
+
+  // CTS multi-stroke rendering
+  const colors = ['#00d4ff','#ffcc44','#ff6b6b','#7fff7f','#c084fc','#fb923c'];
+  drawStrokes.forEach((stroke, idx) => {
+    if (stroke.length < 2) return;
+    const color = colors[idx % colors.length];
+    mc.beginPath();
+    mc.strokeStyle = color;
+    mc.lineWidth = 2.5;
+    mc.lineJoin = 'round';
+    mc.lineCap = 'round';
+    for (let i = 0; i < stroke.length; i++) {
+      const p = dataToCanvas(stroke[i].x, stroke[i].y, mainCanvas, viewXRange, viewYRange);
+      if (i === 0) mc.moveTo(p.px, p.py); else mc.lineTo(p.px, p.py);
+    }
+    mc.stroke();
+    // Fill under
+    mc.globalAlpha = 0.04;
+    mc.fillStyle = color;
+    const pStart = dataToCanvas(stroke[0].x, 0, mainCanvas, viewXRange, viewYRange);
+    const pEnd = dataToCanvas(stroke[stroke.length-1].x, 0, mainCanvas, viewXRange, viewYRange);
+    const ox = dataToCanvas(0,0,mainCanvas,viewXRange,viewYRange);
+    mc.lineTo(pEnd.px, ox.py); mc.lineTo(pStart.px, ox.py); mc.closePath(); mc.fill();
+    mc.globalAlpha = 1;
+
+    // Endpoint dots
+    const first = dataToCanvas(stroke[0].x, stroke[0].y, mainCanvas, viewXRange, viewYRange);
+    const last = dataToCanvas(stroke[stroke.length-1].x, stroke[stroke.length-1].y, mainCanvas, viewXRange, viewYRange);
+    mc.beginPath(); mc.arc(first.px, first.py, 3, 0, 2*PI); mc.fillStyle = color; mc.fill();
+    mc.beginPath(); mc.arc(last.px, last.py, 3, 0, 2*PI); mc.fillStyle = color; mc.fill();
+  });
+}
+
+// Get all drawn points merged (sorted by x) for analysis
+function getAllDrawnPoints() {
+  if (mode === 'dts') return dtsPoints.slice().sort((a,b)=>a.x-b.x);
+  const all = drawStrokes.flat().sort((a,b)=>a.x-b.x);
+  return all;
+}
+
+// ===== SNAP TO INTEGER =====
+function snapToInteger(d) {
+  // Snap threshold in data units — proportional to view range
+  const snapDist = viewXRange * 0.045;
+  const snapX = Math.round(d.x);
+  const snapY = Math.round(d.y);
+  const snappedX = Math.abs(d.x - snapX) < snapDist;
+  const snappedY = Math.abs(d.y - snapY) < snapDist;
+  return {
+    x: snappedX ? snapX : d.x,
+    y: snappedY ? snapY : d.y,
+    didSnapX: snappedX,
+    didSnapY: snappedY
+  };
+}
+
+function drawSnapIndicator(snapped) {
+  if (!snapped.didSnapX && !snapped.didSnapY) return;
+  const p = dataToCanvas(snapped.x, snapped.y, mainCanvas, viewXRange, viewYRange);
+  // Outer ring
+  mc.beginPath();
+  mc.arc(p.px, p.py, 8, 0, 2 * PI);
+  mc.strokeStyle = 'rgba(255,204,68,0.9)';
+  mc.lineWidth = 1.5;
+  mc.stroke();
+  // Inner dot
+  mc.beginPath();
+  mc.arc(p.px, p.py, 2.5, 0, 2 * PI);
+  mc.fillStyle = '#ffcc44';
+  mc.fill();
+  // Crosshair lines
+  mc.strokeStyle = 'rgba(255,204,68,0.4)';
+  mc.lineWidth = 1;
+  mc.setLineDash([3, 3]);
+  if (snapped.didSnapX) {
+    mc.beginPath(); mc.moveTo(p.px, p.py - 14); mc.lineTo(p.px, p.py + 14); mc.stroke();
+  }
+  if (snapped.didSnapY) {
+    mc.beginPath(); mc.moveTo(p.px - 14, p.py); mc.lineTo(p.px + 14, p.py); mc.stroke();
+  }
+  mc.setLineDash([]);
+  // Label
+  mc.font = '9px JetBrains Mono, monospace';
+  mc.fillStyle = '#ffcc44';
+  mc.textAlign = 'left';
+  mc.fillText(`(${snapped.x}, ${snapped.y})`, p.px + 12, p.py - 6);
+}
+
+// ===== STROKE CONFLICT CHECK =====
+// Returns true if newStroke x-range overlaps any existing stroke
+function hasConflict(newStroke) {
+  if (newStroke.length < 2) return false;
+  const newXmin = newStroke[0].x, newXmax = newStroke[newStroke.length-1].x;
+  for (const s of drawStrokes) {
+    if (s.length < 2) continue;
+    const sXmin = s[0].x, sXmax = s[s.length-1].x;
+    // Overlap if ranges intersect (with small tolerance)
+    if (newXmin < sXmax - 0.05 && newXmax > sXmin + 0.05) return true;
+  }
+  return false;
+}
+
+function updateStrokeUI() {
+  document.getElementById('seg-count').textContent =
+    mode === 'dts' ? `${dtsPoints.length} pts` : `${drawStrokes.length} stroke${drawStrokes.length !== 1 ? 's' : ''}`;
+  const list = document.getElementById('seg-list');
+  if (mode === 'dts') {
+    list.innerHTML = dtsPoints.map(p => `<span style="color:var(--accent3)">x[${p.x}] = ${p.y}</span>`).join('&nbsp; ');
+    return;
+  }
+  list.innerHTML = drawStrokes.map((s,i) => {
+    if (s.length < 2) return '';
+    const xmin = s[0].x.toFixed(1), xmax = s[s.length-1].x.toFixed(1);
+    return `<span style="color:var(--accent)">S${i+1}</span> [${xmin}, ${xmax}]`;
+  }).join('<br>');
+}
+
+// ===== DRAWING — live stroke being built =====
+let liveStroke = []; // current in-progress stroke
+
+mainCanvas.addEventListener('mousedown', (e) => {
+  if (!['draw','line','ramp','step','impulse'].includes(currentTool)) return;
+  const rect = mainCanvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (mainCanvas.width / rect.width);
+  const py = (e.clientY - rect.top) * (mainCanvas.height / rect.height);
+  const raw = canvasToData(px, py, mainCanvas, viewXRange, viewYRange);
+  const d = snapToInteger(raw);
+
+  // DTS: single click places a point
+  if (mode === 'dts') {
+    const n = Math.round(d.x);
+    const y = d.didSnapY ? d.y : parseFloat(d.y.toFixed(2));
+    // Remove existing at same n, then add
+    strokeUndoStack.push(JSON.stringify(dtsPoints));
+    dtsPoints = dtsPoints.filter(p => p.x !== n);
+    dtsPoints.push({x: n, y});
+    dtsPoints.sort((a,b)=>a.x-b.x);
+    mainSignalData = null;
+    currentEquation = 'custom';
+    updateStrokeUI();
+    updateSignalInfo();
+    redrawMain();
+    document.getElementById('conflict-warn').style.display = 'none';
+    return;
+  }
+
+  if (currentTool === 'impulse') {
+    strokeUndoStack.push(JSON.stringify(drawStrokes));
+    placeImpulse(d.x, d.y); return;
+  }
+  if (currentTool === 'step') {
+    strokeUndoStack.push(JSON.stringify(drawStrokes));
+    placeStep(d.x); return;
+  }
+  if (currentTool === 'ramp') {
+    strokeUndoStack.push(JSON.stringify(drawStrokes));
+    placeRamp(d.x); return;
+  }
+
+  // CTS freehand / line: start stroke
+  isDrawing = true;
+  liveStroke = [d];
+});
+
+mainCanvas.addEventListener('mousemove', (e) => {
+  const rect = mainCanvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (mainCanvas.width / rect.width);
+  const py = (e.clientY - rect.top) * (mainCanvas.height / rect.height);
+  const raw = canvasToData(px, py, mainCanvas, viewXRange, viewYRange);
+  const snapped = snapToInteger(raw);
+
+  const dispX = snapped.didSnapX ? snapped.x : raw.x;
+  const dispY = snapped.didSnapY ? snapped.y : raw.y;
+  const snapTag = (snapped.didSnapX || snapped.didSnapY) ? ' ⊙' : '';
+  document.getElementById('cursor-pos').textContent = `${dispX.toFixed(2)}, ${dispY.toFixed(2)}${snapTag}`;
+  document.getElementById('cursor-amp').textContent = dispY.toFixed(3);
+
+  if (!isDrawing) {
+    if (snapped.didSnapX || snapped.didSnapY) { redrawMain(); drawSnapIndicator(snapped); }
+    return;
+  }
+
+  const d = snapped;
+
+  if (currentTool === 'draw') {
+    const last = liveStroke[liveStroke.length - 1];
+    if (d.x > (last ? last.x : -Infinity)) liveStroke.push(d);
+    redrawMain();
+    // Draw live stroke in ghost color
+    if (liveStroke.length > 1) {
+      mc.beginPath(); mc.strokeStyle = 'rgba(0,212,255,0.5)'; mc.lineWidth = 2;
+      for (let i = 0; i < liveStroke.length; i++) {
+        const p = dataToCanvas(liveStroke[i].x, liveStroke[i].y, mainCanvas, viewXRange, viewYRange);
+        if (i===0) mc.moveTo(p.px,p.py); else mc.lineTo(p.px,p.py);
+      }
+      mc.stroke();
+    }
+    drawSnapIndicator(snapped);
+  } else if (currentTool === 'line') {
+    redrawMain();
+    if (liveStroke.length >= 1) {
+      const p1 = dataToCanvas(liveStroke[0].x, liveStroke[0].y, mainCanvas, viewXRange, viewYRange);
+      const p2 = dataToCanvas(d.x, d.y, mainCanvas, viewXRange, viewYRange);
+      mc.strokeStyle = 'rgba(0,212,255,0.5)'; mc.lineWidth = 1.5;
+      mc.setLineDash([4,4]);
+      mc.beginPath(); mc.moveTo(p1.px,p1.py); mc.lineTo(p2.px,p2.py); mc.stroke();
+      mc.setLineDash([]);
+    }
+    drawSnapIndicator(snapped);
+  }
+});
+
+mainCanvas.addEventListener('mouseup', (e) => {
+  if (!isDrawing) return;
+  isDrawing = false;
+
+  const rect = mainCanvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (mainCanvas.width / rect.width);
+  const py = (e.clientY - rect.top) * (mainCanvas.height / rect.height);
+  const raw = canvasToData(px, py, mainCanvas, viewXRange, viewYRange);
+  const d = snapToInteger(raw);
+
+  let newStroke = [];
+  if (currentTool === 'line' && liveStroke.length === 1) {
+    const p1 = liveStroke[0];
+    const N = 200;
+    for (let i = 0; i <= N; i++) {
+      const t = i/N;
+      newStroke.push({x: p1.x + t*(d.x-p1.x), y: p1.y + t*(d.y-p1.y)});
+    }
+  } else {
+    newStroke = liveStroke.slice();
+  }
+
+  if (newStroke.length < 2) { liveStroke = []; redrawMain(); return; }
+
+  // Conflict check
+  if (hasConflict(newStroke)) {
+    document.getElementById('conflict-warn').style.display = 'block';
+    setTimeout(()=>document.getElementById('conflict-warn').style.display='none', 3000);
+    liveStroke = [];
+    redrawMain();
+    return;
+  }
+
+  document.getElementById('conflict-warn').style.display = 'none';
+  strokeUndoStack.push(JSON.stringify(drawStrokes));
+  drawStrokes.push(newStroke);
+  liveStroke = [];
+  mainSignalData = null;
+  currentEquation = 'custom';
+  updateStrokeUI();
+  updateSignalInfo();
+  redrawMain();
+});
+
+mainCanvas.addEventListener('mouseleave', () => { isDrawing = false; });
+
+// ===== QUICK SIGNAL TOOLS =====
+function placeImpulse(t0, amp) {
+  // Add a synthetic vertical stroke at t0
+  const snappedT = Math.round(t0 * 2) / 2; // snap to 0.5
+  const snappedA = amp > 0.1 ? parseFloat(amp.toFixed(2)) : 1;
+  // Represent as two-point vertical stroke
+  const stroke = [
+    {x: snappedT, y: 0},
+    {x: snappedT, y: snappedA}
+  ];
+  if (!hasConflict(stroke)) {
+    drawStrokes.push(stroke);
+  }
+  mainSignalData = null;
+  currentEquation = `δ(t − ${snappedT})`;
+  updateStrokeUI(); updateSignalInfo(); redrawMain();
+  // Draw impulse arrow over it
+  drawImpulseArrows();
+}
+
+function drawImpulseArrows() {
+  // Re-draw impulse strokes as arrows
+  for (const s of drawStrokes) {
+    if (s.length === 2 && s[0].x === s[1].x) {
+      plotImpulse(mc, mainCanvas, s[0].x, s[1].y, '#ffcc44', viewXRange, viewYRange);
+    }
+  }
+}
+
+function placeStep(t0) {
+  const t0f = (Math.round(t0 * 10) / 10).toFixed(1);
+  const expr = parseFloat(t0f) === 0 ? 'u(t)' : `u(t - ${t0f})`;
+  const data = generateSignal(expr, -viewXRange, viewXRange, 800);
+  mainSignalData = data;
+  drawStrokes = []; dtsPoints = [];
+  currentEquation = expr;
+  showFormattedEquation(expr);
+  redrawMain(); updateSignalInfo();
+}
+
+function placeRamp(t0) {
+  const t0f = (Math.round(t0 * 10) / 10).toFixed(1);
+  const expr = parseFloat(t0f) === 0 ? 'r(t)' : `r(t - ${t0f})`;
+  const data = generateSignal(expr, -viewXRange, viewXRange, 800);
+  mainSignalData = data;
+  drawStrokes = []; dtsPoints = [];
+  currentEquation = expr;
+  showFormattedEquation(expr);
+  redrawMain(); updateSignalInfo();
+}
+
+// ===== EQUATION → GRAPH =====
+function insertEqn(val) {
+  const inp = document.getElementById('eqn-input');
+  const cur = inp.value.trim();
+  inp.value = cur ? `${cur} + ${val}` : val;
+}
+
+function plotFromEquation() {
+  const expr = document.getElementById('eqn-input').value.trim();
+  const tStart = parseFloat(document.getElementById('t-start').value);
+  const tEnd = parseFloat(document.getElementById('t-end').value);
+
+  if (!expr) { showNotif('Enter an equation first'); return; }
+
+  if (mode === 'cts') {
+    mainSignalData = generateSignal(expr, tStart, tEnd, 1000);
+  } else {
+    mainSignalData = generateDTS(expr, Math.round(tStart), Math.round(tEnd));
+  }
+  drawStrokes = []; dtsPoints = [];
+  currentEquation = expr;
+  document.getElementById('sb-eq').textContent = expr;
+  showFormattedEquation(expr, 'fmt-eq-eqn');
+  redrawMain();
+  updateSignalInfo();
+  showNotif(`Plotted: ${expr}`);
+}
+
+// ===== ANALYZE SIGNAL =====
+function analyzeSignal() {
+  // For DTS, use dtsPoints
+  if (mode === 'dts') {
+    const pts = dtsPoints.slice().sort((a,b)=>a.x-b.x);
+    if (pts.length === 0) { document.getElementById('analysis-out').textContent = 'No DTS points placed.'; return; }
+    const ys = pts.map(p=>p.y);
+    const maxY = Math.max(...ys), minY = Math.min(...ys);
+    const energy = ys.reduce((a,b)=>a+b*b,0);
+    const eq = buildDTSEquation(pts);
+    document.getElementById('analysis-out').textContent =
+`Eq: ${eq}\nMax: ${maxY}, Min: ${minY}\nEnergy: ${energy.toFixed(3)}`;
+    currentEquation = eq;
+    document.getElementById('sb-eq').textContent = eq;
+    showFormattedEquation(eq, 'fmt-eq-draw');
+    return;
+  }
+
+  // CTS: analyze all strokes together as piecewise
+  const allPts = getAllDrawnPoints();
+  const srcPts = allPts.length > 0 ? allPts
+    : (mainSignalData ? mainSignalData.xs.map((x,i)=>({x, y:mainSignalData.ys[i]})) : []);
+
+  if (srcPts.length < 2) { document.getElementById('analysis-out').textContent = 'No signal to analyze.'; return; }
+
+  const ys = srcPts.map(p=>p.y);
+  const xs = srcPts.map(p=>p.x);
+  const maxY = Math.max(...ys), minY = Math.min(...ys);
+  const avgY = ys.reduce((a,b)=>a+b,0)/ys.length;
+  const energy = ys.reduce((a,b)=>a+b*b,0)/ys.length;
+
+  // Build segments from drawStrokes sorted by x-start
+  const segments = buildSegments();
+  const { eqText, eqHtml } = buildPiecewiseEquation(segments);
+
+  document.getElementById('analysis-out').textContent =
+`${eqText}
+
+Max: ${maxY.toFixed(3)}, Min: ${minY.toFixed(3)}
+Mean: ${avgY.toFixed(3)}
+Energy ≈ ${energy.toFixed(3)}
+Segments: ${segments.length}`;
+
+  document.getElementById('sb-eq').textContent = eqText.split('\n')[0];
+  document.getElementById('sb-signal').textContent = `drawn`;
+  currentEquation = eqText;
+
+  const el = document.getElementById('fmt-eq-draw');
+  if (el) { el.style.display = 'block'; el.innerHTML = eqHtml; }
+}
+
+// Build sorted segment descriptors from drawStrokes
+function buildSegments() {
+  const segs = [];
+  for (const stroke of drawStrokes) {
+    if (stroke.length < 2) continue;
+    const sorted = stroke.slice().sort((a,b)=>a.x-b.x);
+    const x0 = sorted[0].x, y0 = sorted[0].y;
+    const x1 = sorted[sorted.length-1].x, y1 = sorted[sorted.length-1].y;
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+
+    let type, slope = 0, intercept = 0;
+
+    // Near-vertical stroke drawn by user = a step/discontinuity connector,
+    // NOT a delta. Only the explicit impulse tool should produce delta.
+    // We simply skip purely vertical connectors in the piecewise (they are
+    // just transition lines between segments, not a segment themselves).
+    if (Math.abs(dx) < 0.08) {
+      // It's a vertical transition line — skip it, it's just connecting two segments
+      continue;
+    }
+
+    slope = dy / dx;
+    intercept = y0 - slope * x0;
+
+    // Check linearity: compute variance of residuals
+    const yVariance = sorted.reduce((acc, p) => {
+      const expected = slope * p.x + intercept;
+      return acc + (p.y - expected) ** 2;
+    }, 0) / sorted.length;
+
+    if (Math.abs(slope) < 0.04 && yVariance < 0.04) {
+      type = 'constant';
+    } else if (yVariance < 0.1) {
+      type = 'linear';
+    } else {
+      type = 'curve';
+    }
+
+    segs.push({ x0, y0, x1, y1, slope, intercept, type, pts: sorted });
+  }
+  segs.sort((a, b) => a.x0 - b.x0);
+  return segs;
+}
+
+// Format a number: drop .0 if integer, keep 2 decimals otherwise
+function fmtN(n) {
+  if (Number.isInteger(n) || Math.abs(n - Math.round(n)) < 0.005) return String(Math.round(n));
+  return n.toFixed(2);
+}
+
+// Format coefficient for display: skip "1 *", show "−" for -1
+function fmtCoeff(c, isFirst) {
+  const sign = c < 0 ? '−' : (isFirst ? '' : '+');
+  const abs = Math.abs(c);
+  const num = Math.abs(abs - 1) < 0.005 ? '' : fmtN(abs) + ' ';
+  return { sign, num };
+}
+
+// Build a u(t − a) term string
+function uTerm(shift) {
+  if (Math.abs(shift) < 0.005) return 'u(t)';
+  if (shift > 0) return `u(t − ${fmtN(shift)})`;
+  return `u(t + ${fmtN(Math.abs(shift))})`;
+}
+
+// Build a r(t − a) term string
+function rTerm(shift) {
+  if (Math.abs(shift) < 0.005) return 'r(t)';
+  if (shift > 0) return `r(t − ${fmtN(shift)})`;
+  return `r(t + ${fmtN(Math.abs(shift))})`;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  CORE: Decompose piecewise segments into sum of u(t) & r(t)
+//
+//  Correct S&S technique — emit CHANGES at each breakpoint:
+//
+//  At each breakpoint t_k, compute:
+//    Δslope_k  = slope_after − slope_before   (0 before first, 0 after last)
+//    Δvalue_k  = value_after − value_before   (the jump at that point)
+//
+//  Each breakpoint contributes:
+//    Δslope_k · r(t − t_k)    if Δslope ≠ 0
+//    Δvalue_k · u(t − t_k)    if Δvalue ≠ 0  (after accounting for slope change)
+//
+//  The "value contribution" of a slope change at t_k also lifts the signal
+//  by Δslope_k · (t_k), so the net step at that breakpoint is:
+//    actual_jump − 0  (we use the y-value directly since r already handles the ramp)
+//
+//  Simplest correct form:
+//    x(t) = Σ_k [ Δm_k · r(t−t_k) + Δc_k · u(t−t_k) ]
+//  where Δm_k = change in slope, Δc_k = change in y-intercept of the line
+//  (i.e. value_right_at_breakpoint minus what the previous line would give there)
+// ─────────────────────────────────────────────────────────────
+function buildURDecomposition(segs) {
+  if (segs.length === 0) return { eqText: 'x(t) = 0', eqHtml: htmlEq('x(t) = 0') };
+
+  // Build list of breakpoints with before/after slope and value
+  // Extend: before first segment slope=0, value=0
+  //         after last segment slope=0, value=0
+
+  const breakpoints = [];
+
+  // Collect all unique x positions (start of each segment, end of last)
+  // We model: signal is 0 outside [segs[0].x0, segs[last].x1]
+
+  // At each segment start x0: the signal "turns on" or changes
+  // At the end of the last segment x1: everything turns off
+
+  // Build a timeline of (t, slope_before, val_before, slope_after, val_after)
+  const events = []; // {t, mBefore, mAfter, vBefore, vAfter}
+
+  // signal before all segments: m=0, val=0
+  let prevM = 0, prevValAtT = 0;
+
+  for (let i = 0; i < segs.length; i++) {
+    const s = segs[i];
+    const mAfter = s.type === 'linear' ? s.slope : 0;
+    const vAtStart = s.y0; // actual signal value just after this breakpoint
+
+    // What does the previous line give at s.x0?
+    const prevLineAtT = prevValAtT + prevM * (s.x0 - (i === 0 ? s.x0 : segs[i-1].x0));
+
+    // Recompute: prevLine extended to s.x0
+    // Track running "what the reconstructed signal gives at t" using our terms
+    // Simpler: just track Δm and Δ(step offset) at each breakpoint
+
+    const dm = mAfter - prevM;
+    // The step jump at this point: actual value - what previous slope line gives here
+    // Previous line: y = prevM * (t - t_prev_start) + prevVal
+    // We need to know what value the accumulated signal gives at s.x0
+    // Use direct approach: Δc = vAtStart - (prevValAtT + prevM*(s.x0 - prevT))
+    const prevT = i === 0 ? s.x0 : segs[i-1].x0;
+    const prevLineVal = i === 0 ? 0 : (segs[i-1].y0 + prevM * (s.x0 - prevT));
+    const dc = vAtStart - prevLineVal;
+
+    events.push({ t: s.x0, dm, dc });
+
+    prevM = mAfter;
+    prevValAtT = s.y0;
+    // update prevT for next iteration (done via segs[i].x0 above)
+  }
+
+  // At the end of the last segment: signal drops back to 0
+  const last = segs[segs.length - 1];
+  const lastM = last.type === 'linear' ? last.slope : 0;
+  const lastVal = last.y1; // value at end
+
+  // What does current running line give at last.x1? It gives last.y1 (by definition of the segment)
+  // We need to cancel: slope drops by lastM, value drops by lastVal (but slope already adds lastM*(t-last.x1))
+  // Net: dm = -lastM, dc = -lastVal
+  events.push({ t: last.x1, dm: -lastM, dc: -lastVal });
+
+  // Now build terms from events, filtering near-zero
+  const terms = [];
+  for (const ev of events) {
+    if (Math.abs(ev.dm) > 0.005) terms.push({ coeff: ev.dm, kind: 'r', shift: ev.t });
+    if (Math.abs(ev.dc) > 0.005) terms.push({ coeff: ev.dc, kind: 'u', shift: ev.t });
+  }
+
+  // Sort chronologically; at same t, r before u
+  terms.sort((a, b) => {
+    if (Math.abs(a.shift - b.shift) > 0.005) return a.shift - b.shift;
+    return a.kind === 'r' ? -1 : 1;
+  });
+
+  if (terms.length === 0) return { eqText: 'x(t) = 0', eqHtml: htmlEq('x(t) = 0') };
+
+  // Build text string
+  let txt = 'x(t) = ';
+  let isFirst = true;
+  for (const t of terms) {
+    const fn = t.kind === 'u' ? uTerm(t.shift) : rTerm(t.shift);
+    const c = t.coeff;
+    const absC = Math.abs(c);
+    const sign = c < 0 ? (isFirst ? '−' : ' − ') : (isFirst ? '' : ' + ');
+    const coeffStr = Math.abs(absC - 1) < 0.005 ? '' : fmtN(absC) + ' ';
+    txt += `${sign}${coeffStr}${fn}`;
+    isFirst = false;
+  }
+
+  // Build HTML
+  let htmlParts = [];
+  isFirst = true;
+  for (const t of terms) {
+    const fn = t.kind === 'u' ? uTerm(t.shift) : rTerm(t.shift);
+    const c = t.coeff;
+    const absC = Math.abs(c);
+    const sign = c < 0 ? (isFirst ? '−' : ' − ') : (isFirst ? '' : ' + ');
+    const coeffStr = Math.abs(absC - 1) < 0.005 ? '' : `<span style="color:var(--accent4)">${fmtN(absC)}</span> `;
+    const color = t.kind === 'u' ? 'var(--accent)' : 'var(--accent3)';
+    htmlParts.push(`<span style="color:var(--text-dim)">${sign}</span>${coeffStr}<span style="color:${color};font-family:'Georgia',serif">${fn}</span>`);
+    isFirst = false;
+  }
+
+const eqHtml = `
+    <div style="font-size:0.92rem;line-height:2;text-align:left;padding:4px 0;word-break:break-word">
+      <span style="color:var(--text);font-family:'Georgia',serif">x(t) = </span>${htmlParts.join('')}
+      <button class="copy-rhs-btn" title="Copy RHS"
+        onclick='navigator.clipboard.writeText(${JSON.stringify(txt.replace("x(t) = ", ""))}).then(()=>showNotif("RHS copied!"))'>⎘</button>
+    </div>
+    <div style="font-family:var(--mono);font-size:0.58rem;color:var(--text-dim);margin-top:2px;text-align:right">
+      <span style="color:var(--accent)">■</span> u(t) = unit step &nbsp;
+      <span style="color:var(--accent3)">■</span> r(t) = ramp
+    </div>`;
+
+  return { eqText: txt, eqHtml };
+}
+
+function htmlEq(s) {
+  return `<span class="eq-main">${s}</span>`;
+}
+
+// Interval text: "a ≤ t < b"  (kept for the piecewise display block)
+function intervalText(x0, x1, isLast) {
+  const lo = fmtN(x0), hi = fmtN(x1);
+  if (isLast) return `${lo} ≤ t ≤ ${hi}`;
+  return `${lo} ≤ t < ${hi}`;
+}
+
+// segExprText — used only for the piecewise-brace secondary display
+function segExprText(seg) {
+  if (seg.type === 'constant') {
+    const v = fmtN(seg.y0);
+    return v === '0' ? '0' : v;
+  }
+  if (seg.type === 'linear') {
+    const m = seg.slope, b = seg.intercept;
+    if (Math.abs(m - 1) < 0.05 && Math.abs(b) < 0.05) return 't';
+    if (Math.abs(m + 1) < 0.05 && Math.abs(b) < 0.05) return '−t';
+    let expr = '';
+    if (Math.abs(m) < 0.005) {
+      expr = fmtN(b);
+    } else {
+      const mAbs = Math.abs(m);
+      const mSign = m < 0 ? '−' : '';
+      const mStr = Math.abs(mAbs - 1) < 0.005 ? `${mSign}t` : `${mSign}${fmtN(mAbs)} t`;
+      expr = mStr;
+      if (Math.abs(b) > 0.005)
+        expr += b > 0 ? ` + ${fmtN(b)}` : ` − ${fmtN(Math.abs(b))}`;
+    }
+    return expr;
+  }
+  return 'f(t)';
+}
+
+function buildPiecewiseEquation(segs) {
+  // Primary: u(t)/r(t) decomposition
+  const { eqText, eqHtml: urHtml } = buildURDecomposition(segs);
+
+  // Secondary: piecewise brace block (shown below the main eq)
+  let braceHtml = '';
+  if (segs.length > 0) {
+    const rows = segs.map((s, i) => ({
+      expr: segExprText(s),
+      iv: intervalText(s.x0, s.x1, i === segs.length - 1)
+    }));
+    braceHtml = `
+      <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
+        <div style="font-family:var(--mono);font-size:0.58rem;color:var(--text-dim);margin-bottom:4px">PIECEWISE FORM</div>
+        <div style="display:inline-flex;align-items:center;gap:6px;font-size:0.88rem">
+          <span style="font-family:'Georgia',serif;color:var(--text)">x(t) =</span>
+          <span style="font-size:1.8rem;color:var(--text-dim);line-height:1;font-weight:100">{</span>
+          <table style="border-collapse:collapse">
+            ${rows.map(r => `<tr>
+              <td style="text-align:right;padding:0 8px 0 0;color:var(--accent4);font-family:'Georgia',serif">${r.expr}</td>
+              <td style="padding:0;color:var(--text-dim);font-family:var(--mono);font-size:0.65rem">${r.iv}</td>
+            </tr>`).join('')}
+          </table>
+        </div>
+      </div>`;
+  }
+
+  const eqHtml = urHtml + braceHtml;
+  return { eqText, eqHtml };
+}
+
+// DTS: express as sum of scaled impulses
+function buildDTSEquation(pts) {
+  if (pts.length === 0) return 'x[n] = 0';
+  const terms = pts.filter(p => Math.abs(p.y) > 0.001).map(p => {
+    const amp = fmtN(p.y);
+    const n = fmtN(p.x);
+    if (p.x === 0) return amp === '1' ? 'δ[n]' : `${amp} δ[n]`;
+    return amp === '1' ? `δ[n − ${n}]` : `${amp} δ[n − ${n}]`;
+  });
+  return `x[n] = ${terms.join(' + ') || '0'}`;
+}
+
+// OLD guessSignalEquation kept for single-stroke fallback (used by equation plotter)
+function guessSignalEquation(pts) {
+  if (pts.length < 2) return 'unknown';
+  const ys = pts.map(p=>p.y);
+  const xs = pts.map(p=>p.x);
+  const maxY = Math.max(...ys.map(Math.abs));
+  const minY = Math.min(...ys);
+  const variance = ys.reduce((a,b)=>a+(b-ys[0])*(b-ys[0]),0)/ys.length;
+  if (variance < 0.01) {
+    if (Math.abs(maxY) < 0.05) return 'x(t) = 0';
+    return `x(t) = ${fmtN(ys[0])}`;
+  }
+  const transitions = ys.slice(1).filter((y,i)=>Math.abs(y-ys[i])>0.4).length;
+  if (transitions <= 2 && maxY > 0.5) {
+    let stepIdx = 0;
+    for (let i=1;i<ys.length;i++) {
+      if (Math.abs(ys[i]-ys[i-1])>0.4) { stepIdx = i; break; }
+    }
+    const t0 = fmtN(xs[stepIdx]);
+    const amp = fmtN(maxY);
+    if (parseFloat(t0) === 0) return `x(t) = ${amp} u(t)`;
+    return `x(t) = ${amp} u(t − ${t0})`;
+  }
+  const diffs = ys.slice(1).map((y,i)=>y-ys[i]);
+  const avgDiff = diffs.reduce((a,b)=>a+b,0)/diffs.length;
+  const diffVar = diffs.reduce((a,b)=>a+(b-avgDiff)*(b-avgDiff),0)/diffs.length;
+  if (diffVar < 0.02 && Math.abs(avgDiff) > 0) {
+    const slope = (ys[ys.length-1]-ys[0])/(xs[xs.length-1]-xs[0]);
+    if (Math.abs(slope-1)<0.2) return `x(t) = r(t) = t u(t)`;
+    return `x(t) = ${fmtN(slope)} t`;
+  }
+  const signChanges = ys.slice(1).filter((y,i)=>y*ys[i]<0).length;
+  if (signChanges > 4) {
+    return `x(t) ≈ ${fmtN(maxY)} sin(${fmtN(signChanges/2*Math.PI/(xs[xs.length-1]-xs[0]))} t)`;
+  }
+  if (ys[0] > 0 && ys[ys.length-1] < ys[0]*0.1 && minY >= 0) {
+    const tau = (xs[xs.length-1]-xs[0])/3;
+    return `x(t) ≈ ${fmtN(maxY)} e^(−t/${fmtN(tau)}) u(t)`;
+  }
+  return `x(t) ≈ custom`;
+}
+
+// ===== TRANSFORM =====
+function quickTransform(type) {
+  const presets = {
+    'shift+1': {a:1, b:1},
+    'shift-1': {a:1, b:-1},
+    'reverse': {a:-1, b:0},
+    'compress': {a:2, b:0},
+    'expand': {a:0.5, b:0},
+    'flip+shift': {a:-1, b:1}
+  };
+  const p = presets[type];
+  document.getElementById('t-a').value = p.a;
+  document.getElementById('t-b').value = p.b;
+  applyTransform();
+}
+
+function applyTransform() {
+  const a = parseFloat(document.getElementById('t-a').value);
+  const b = parseFloat(document.getElementById('t-b').value);
+  const A = parseFloat(document.getElementById('t-amp').value) || 1;
+
+  let origEq = currentEquation || document.getElementById('eqn-input').value || 'u(t)';
+  let transformedEq = buildTransformEq(origEq, a, b, A);
+
+  document.getElementById('transform-panel').style.display = 'block';
+  document.getElementById('transform-label').textContent = transformedEq;
+  document.getElementById('transform-eq').textContent = transformedEq;
+  document.getElementById('transform-eq-info').textContent = transformedEq;
+
+  const N = 1000;
+  let origData, transData;
+  const allPts = getAllDrawnPoints();
+  if (origEq !== 'custom' && origEq && allPts.length === 0) {
+    origData = generateSignal(origEq, -viewXRange, viewXRange, N);
+    transData = generateTransformed(origEq, a, b, N);
+  } else if (allPts.length > 0) {
+    origData = { xs: allPts.map(p => p.x), ys: allPts.map(p => p.y) };
+    transData = transformDrawnPoints(allPts, a, b);
+  } else {
+    showNotif('No signal to transform'); return;
+  }
+
+  // Apply amplitude scaling
+  transData.ys = transData.ys.map(y => y * A);
+
+  drawAxes(tc, transformCanvas, viewXRange, viewYRange, mode === 'cts' ? 't' : 'n');
+  plotCTS(tc, transformCanvas, origData.xs, origData.ys, 'rgba(80,120,160,0.35)', viewXRange, viewYRange);
+  if (mode === 'cts') plotCTS(tc, transformCanvas, transData.xs, transData.ys, '#ffcc44', viewXRange, viewYRange, true);
+  else plotDTS(tc, transformCanvas, transData.xs, transData.ys, '#ffcc44', viewXRange, viewYRange);
+
+document.getElementById('transform-eq').textContent = transformedEq;
+  document.getElementById('sb-eq').textContent = transformedEq;
+  showNotif(`Transformed: ${transformedEq}`);
+
+  // Show formatted equation in transform panel
+  const fmtEl = document.getElementById('fmt-eq-transform');
+  if (fmtEl) {
+    fmtEl.style.display = 'block';
+    const safeEq = transformedEq.replace(/'/g, "\\'");
+    fmtEl.innerHTML = `
+      <span class="eq-main" style="font-family:'Georgia',serif;color:var(--accent4)">${transformedEq}</span>
+      <button class="copy-rhs-btn" title="Copy"
+        onclick="navigator.clipboard.writeText('${safeEq}').then(()=>showNotif('Copied!'))">⎘</button>`;
+  }
+
+}
+
+function buildTransformEq(orig, a, b, A=1) {
+  let inner = '';
+  if (a === 1 && b === 0) inner = 't';
+  else if (a === 1) inner = b >= 0 ? `t + ${b}` : `t − ${Math.abs(b)}`;
+  else if (a === -1) inner = b >= 0 ? `−t + ${b}` : `−t − ${Math.abs(b)}`;
+  else inner = `${a}t ${b >= 0 ? '+ ' + b : '− ' + Math.abs(b)}`;
+  const ampStr = (Math.abs(A - 1) < 0.005) ? '' : `${A}·`;
+  return `${ampStr}x(${inner})`;
+}
+
+function generateTransformed(expr, a, b, N=1000) {
+  // x(at+b): sample at t, compute x(at+b)
+  const tStart = -viewXRange, tEnd = viewXRange;
+  const xs = [], ys = [];
+  const dt = (tEnd - tStart) / N;
+  for (let i = 0; i <= N; i++) {
+    const t = tStart + i * dt;
+    const tau = a*t + b;
+    xs.push(t);
+    ys.push(evalSignal(expr, tau));
+  }
+  return {xs, ys};
+}
+
+function transformDrawnPoints(pts, a, b) {
+  // new x(t) = old(at+b): for each output t, find input tau = at+b
+  // Interpolate from drawn pts
+  const xs = pts.map(p=>p.x), ys = pts.map(p=>p.y);
+  const xmin = Math.min(...xs), xmax = Math.max(...xs);
+  const result = [];
+  const tStart = -viewXRange, tEnd = viewXRange;
+  const N = 500;
+  for (let i = 0; i <= N; i++) {
+    const t = tStart + i*(tEnd-tStart)/N;
+    const tau = a*t + b;
+    if (tau < xmin || tau > xmax) { result.push({x:t,y:0}); continue; }
+    // linear interp
+    let y = 0;
+    for (let j = 0; j < xs.length-1; j++) {
+      if (xs[j] <= tau && tau <= xs[j+1]) {
+        const frac = (tau-xs[j])/(xs[j+1]-xs[j]);
+        y = ys[j] + frac*(ys[j+1]-ys[j]);
+        break;
+      }
+    }
+    result.push({x:t,y});
+  }
+  return {xs: result.map(p=>p.x), ys: result.map(p=>p.y)};
+}
+
+function overlayTransform() {
+  // Just redraw main with both
+  applyTransform();
+}
+
+function closeTransformPanel() {
+  document.getElementById('transform-panel').style.display = 'none';
+}
+
+// ===== DUAL OPS =====
+let activeDualOp = 'add';
+function setDualOp(op) {
+  activeDualOp = op;
+  document.querySelectorAll('[id^=op-]').forEach(b=>b.classList.remove('active'));
+  document.getElementById('op-'+op)?.classList.add('active');
+}
+
+function computeDualOp() {
+  const tStart = -viewXRange, tEnd = viewXRange;
+  const N = mode === 'cts' ? 800 : Math.round(2 * viewXRange) + 1;
+  let d1, d2;
+
+  if (dualInputMode === 'graph') {
+    const flatten = strokes => {
+      const all = strokes.flat().sort((a, b) => a.x - b.x);
+      return { xs: all.map(p => p.x), ys: all.map(p => p.y) };
+    };
+    d1 = flatten(dualStrokes1);
+    d2 = flatten(dualStrokes2);
+    if (!d1.xs.length || !d2.xs.length) { showNotif('Draw both signals first'); return; }
+  } else {
+    const x1expr = document.getElementById('dual-x1').value;
+    const x2expr = document.getElementById('dual-x2').value;
+    if (!x1expr || !x2expr) { showNotif('Enter both signals'); return; }
+    if (mode === 'cts') {
+      d1 = generateSignal(x1expr, tStart, tEnd, N);
+      d2 = generateSignal(x2expr, tStart, tEnd, N);
+    } else {
+      d1 = generateDTS(x1expr, Math.round(tStart), Math.round(tEnd));
+      d2 = generateDTS(x2expr, Math.round(tStart), Math.round(tEnd));
+    }
+  }
+
+  const ops = { add: (a, b) => a + b, sub: (a, b) => a - b, mul: (a, b) => a * b };
+  const labels = { add: 'x₁(t) + x₂(t)', sub: 'x₁(t) − x₂(t)', mul: 'x₁(t) · x₂(t)', conv: 'x₁(t) ★ x₂(t)' };
+  document.getElementById('result-label').textContent = `y(t) = ${labels[activeDualOp]}`;
+
+  let res;
+  if (activeDualOp === 'conv') {
+    res = convolve(d1.xs, d1.ys, d2.xs, d2.ys);
+  } else {
+    const fn = ops[activeDualOp];
+    res = { xs: d1.xs, ys: d1.ys.map((y, i) => fn(y, d2.ys[i] || 0)) };
+  }
+
+  document.getElementById('dual-panel').style.display = 'block';
+
+  const w1 = dualCanvas1.offsetWidth || 420;
+  dualCanvas1.width = w1; dualCanvas2.width = w1;
+
+  drawAxes(dc1, dualCanvas1, viewXRange, viewYRange, mode === 'cts' ? 't' : 'n');
+  drawAxes(dc2, dualCanvas2, viewXRange, viewYRange, mode === 'cts' ? 't' : 'n');
+  drawAxes(dr, dualResult, activeDualOp === 'conv' ? viewXRange * 2 : viewXRange, viewYRange * 2, mode === 'cts' ? 't' : 'n');
+
+  if (mode === 'cts') {
+    plotCTS(dc1, dualCanvas1, d1.xs, d1.ys, '#00d4ff', viewXRange, viewYRange, true);
+    plotCTS(dc2, dualCanvas2, d2.xs, d2.ys, '#ff6b6b', viewXRange, viewYRange, true);
+    plotCTS(dr, dualResult, res.xs, res.ys, '#7fff7f', activeDualOp === 'conv' ? viewXRange * 2 : viewXRange, Math.max(...res.ys.map(Math.abs)) * 1.2 || 1);
+  } else {
+    plotDTS(dc1, dualCanvas1, d1.xs, d1.ys, '#00d4ff', viewXRange, viewYRange);
+    plotDTS(dc2, dualCanvas2, d2.xs, d2.ys, '#ff6b6b', viewXRange, viewYRange);
+    plotDTS(dr, dualResult, res.xs, res.ys, '#7fff7f', activeDualOp === 'conv' ? viewXRange * 2 : viewXRange, Math.max(...res.ys.map(Math.abs)) * 1.2 || 1);
+  }
+
+  showNotif(`Computed: ${labels[activeDualOp]}`);
+}
+
+function convolve(xs1, ys1, xs2, ys2) {
+  // Discrete approximation of convolution
+  const dt = xs1[1]-xs1[0];
+  const N1 = ys1.length, N2 = ys2.length;
+  const Nout = N1 + N2 - 1;
+  const ysout = new Array(Nout).fill(0);
+  for (let i=0;i<N1;i++) for (let j=0;j<N2;j++) ysout[i+j] += ys1[i]*ys2[j]*dt;
+  const t0 = xs1[0]+xs2[0];
+  const xsout = ysout.map((_,k)=>t0+k*dt);
+  return {xs:xsout, ys:ysout};
+}
+
+function closeDualPanel() { document.getElementById('dual-panel').style.display = 'none'; }
+
+let dualInputMode = 'eqn';
+let dualDrawTarget = 1;
+let dualStrokes1 = [];
+let dualStrokes2 = [];
+let dualDrawingEnabled = false;
+
+function setDualInputMode(m) {
+  dualInputMode = m;
+  document.getElementById('dual-eqn-inputs').style.display = m === 'eqn' ? 'block' : 'none';
+  document.getElementById('dual-graph-inputs').style.display = m === 'graph' ? 'block' : 'none';
+  document.getElementById('dual-mode-eqn').classList.toggle('active', m === 'eqn');
+  document.getElementById('dual-mode-graph').classList.toggle('active', m === 'graph');
+  if (m === 'graph') {
+    document.getElementById('dual-panel').style.display = 'block';
+    drawAxes(dc1, dualCanvas1, viewXRange, viewYRange);
+    drawAxes(dc2, dualCanvas2, viewXRange, viewYRange);
+    if (!dualDrawingEnabled) { enableDualDrawing(); dualDrawingEnabled = true; }
+  }
+}
+
+function setDualDrawTarget(n) {
+  dualDrawTarget = n;
+  document.getElementById('dual-active-signal').textContent = `x${n}`;
+  document.getElementById('dual-target-1').classList.toggle('active', n === 1);
+  document.getElementById('dual-target-2').classList.toggle('active', n === 2);
+}
+
+function enableDualDrawing() {
+  [dualCanvas1, dualCanvas2].forEach((canvas, idx) => {
+    const n = idx + 1;
+    let drawing = false;
+    let stroke = [];
+
+    canvas.addEventListener('mousedown', e => {
+      if (dualInputMode !== 'graph' || dualDrawTarget !== n) return;
+      drawing = true;
+      stroke = [getDualData(e, canvas)];
+    });
+
+    canvas.addEventListener('mousemove', e => {
+      if (!drawing || dualInputMode !== 'graph' || dualDrawTarget !== n) return;
+      const d = getDualData(e, canvas);
+      if (d.x > stroke[stroke.length - 1].x) stroke.push(d);
+      redrawDualCanvas(n, stroke);
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      if (!drawing) return;
+      drawing = false;
+      if (stroke.length > 1) {
+        if (n === 1) dualStrokes1.push(stroke.slice());
+        else dualStrokes2.push(stroke.slice());
+      }
+      stroke = [];
+      redrawDualCanvas(n);
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      if (drawing && stroke.length > 1) {
+        if (n === 1) dualStrokes1.push(stroke.slice());
+        else dualStrokes2.push(stroke.slice());
+      }
+      drawing = false;
+      stroke = [];
+      redrawDualCanvas(n);
+    });
+  });
+}
+
+function getDualData(e, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const py = (e.clientY - rect.top) * (canvas.height / rect.height);
+  return canvasToData(px, py, canvas, viewXRange, viewYRange);
+}
+
+function redrawDualCanvas(n, live = []) {
+  const canvas = n === 1 ? dualCanvas1 : dualCanvas2;
+  const ctx = n === 1 ? dc1 : dc2;
+  const strokes = n === 1 ? dualStrokes1 : dualStrokes2;
+  const color = n === 1 ? '#00d4ff' : '#ff6b6b';
+  drawAxes(ctx, canvas, viewXRange, viewYRange);
+  strokes.forEach(s => {
+    if (s.length > 1) plotCTS(ctx, canvas, s.map(p => p.x), s.map(p => p.y), color, viewXRange, viewYRange, true);
+  });
+  if (live.length > 1) plotCTS(ctx, canvas, live.map(p => p.x), live.map(p => p.y), 'rgba(255,255,255,0.25)', viewXRange, viewYRange);
+}
+
+// ===== PANEL SWITCHING =====
+function switchPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+
+  // Target ONLY the 4 main nav sub-tabs by their parent
+  const navTabsContainer = document.querySelector('.sub-tabs');
+  navTabsContainer.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+
+  const names = ['draw', 'eqn', 'ops', 'dual'];
+  const idx = names.indexOf(name);
+  const allNavTabs = navTabsContainer.querySelectorAll('.sub-tab');
+  if (allNavTabs[idx]) allNavTabs[idx].classList.add('active');
+
+  if (name === 'dual') {
+    document.getElementById('dual-panel').style.display = 'none';
+  }
+}
+
+// ===== MODE SWITCHING =====
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.mode-tab').forEach(t=>{ if(t.textContent.includes(m.toUpperCase())) t.classList.add('active'); });
+  document.getElementById('mode-badge').textContent = m.toUpperCase();
+  document.getElementById('mode-badge').className = 'badge '+(m==='cts'?'cts':'dts');
+  document.getElementById('main-label').textContent = m==='cts'?'x(t)':'x[n]';
+  document.getElementById('sb-mode').textContent = m.toUpperCase();
+  document.getElementById('info-mode').textContent = m.toUpperCase();
+  document.getElementById('dts-hint').style.display = m === 'dts' ? 'block' : 'none';
+  clearCanvas('main');
+}
+
+// ===== TOOL SELECTION =====
+function setTool(t) {
+  currentTool = t;
+  document.querySelectorAll('.tool-btn[id^=tool-]').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tool-'+t)?.classList.add('active');
+}
+
+// ===== FORMATTED EQUATION RENDERER =====
+function showFormattedEquation(expr, targetId = 'fmt-eq-draw') {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  el.style.display = 'block';
+  const rhs = expr.includes('=') ? expr.split('=').slice(1).join('=').trim() : expr;
+  const safeRhs = rhs.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  el.innerHTML = `
+    <span class="eq-main">${formatEquation(expr)}</span>
+    <button class="copy-rhs-btn" title="Copy RHS"
+      onclick="navigator.clipboard.writeText('${safeRhs}').then(()=>showNotif('RHS copied!'))">⎘</button>`;
+}
+
+function formatEquation(expr) {
+  if (!expr || expr === 'custom') return '—';
+  let e = expr;
+
+  // Normalize raw expression to pretty HTML math
+
+  // u(t...) → u(t) with proper spacing
+  e = e.replace(/\bu\(([^)]+)\)/g, (_, inner) => `u(${formatInner(inner)})`);
+  e = e.replace(/\br\(([^)]+)\)/g, (_, inner) => `r(${formatInner(inner)})`);
+  e = e.replace(/\bdelta\(([^)]+)\)/g, (_, inner) => `δ(${formatInner(inner)})`);
+  e = e.replace(/\brect\(([^)]+)\)/g, (_, inner) => `rect(${formatInner(inner)})`);
+  e = e.replace(/\btri\(([^)]+)\)/g, (_, inner) => `tri(${formatInner(inner)})`);
+  e = e.replace(/\bsgn\(([^)]+)\)/g, (_, inner) => `sgn(${formatInner(inner)})`);
+  e = e.replace(/\bsinc\(([^)]+)\)/g, (_, inner) => `sinc(${formatInner(inner)})`);
+  e = e.replace(/\bsin\(([^)]+)\)/g, (_, inner) => `sin(${formatInner(inner)})`);
+  e = e.replace(/\bcos\(([^)]+)\)/g, (_, inner) => `cos(${formatInner(inner)})`);
+
+  // exp(-t) or exp(...)
+  e = e.replace(/exp\(([^)]+)\)/g, (_, inner) => {
+    const fi = formatInner(inner);
+    return `e<sup>${fi}</sup>`;
+  });
+
+  // x^n → x<sup>n</sup>
+  e = e.replace(/([a-z0-9)]+)\^([0-9.+-]+)/g, (_, base, exp) => `${base}<sup>${exp}</sup>`);
+
+  // Multiplication: * → ·
+  e = e.replace(/\*/g, '·');
+
+  // PI → π
+  e = e.replace(/\bPI\b/g, 'π');
+
+  // - sign to minus
+  e = e.replace(/−/g, '−');
+
+  // Wrap as x(t) = ... if not already
+  if (!e.startsWith('x(')) e = `x(t) = ${e}`;
+
+  return e;
+}
+
+function formatInner(inner) {
+  let s = inner.trim();
+  s = s.replace(/\bPI\b/g, 'π');
+  s = s.replace(/\*/g, '·');
+  // t - N → t − N
+  s = s.replace(/t\s*-\s*([0-9.]+)/g, 't − $1');
+  s = s.replace(/t\s*\+\s*([0-9.]+)/g, 't + $1');
+  // -t → −t
+  s = s.replace(/^-t/, '−t');
+  return s;
+}
+
+// ===== CANVAS UTILS =====
+function clearCanvas(which) {
+  if (which === 'main') {
+    drawStrokes = [];
+    dtsPoints = [];
+    liveStroke = [];
+    mainSignalData = null;
+    currentEquation = '';
+    strokeUndoStack = [];
+    document.getElementById('sb-eq').textContent = '—';
+    document.getElementById('sb-signal').textContent = '—';
+    document.getElementById('conflict-warn').style.display = 'none';
+    const fe = document.getElementById('fmt-eq-draw');
+    if (fe) fe.style.display = 'none';
+    updateStrokeUI();
+    redrawMain();
+    updateSignalInfo();
+  }
+}
+
+function undoStroke() {
+  if (strokeUndoStack.length > 0) {
+    const prev = JSON.parse(strokeUndoStack.pop());
+    if (mode === 'dts') dtsPoints = prev;
+    else drawStrokes = prev;
+    mainSignalData = null;
+    currentEquation = 'custom';
+    updateStrokeUI();
+    updateSignalInfo();
+    redrawMain();
+    showNotif('Stroke undone');
+  } else {
+    showNotif('Nothing to undo');
+  }
+}
+
+function updateSignalInfo() {
+  const drawn = getAllDrawnPoints();
+  const pts = drawn.length > 0 ? drawn : (mainSignalData ? mainSignalData.xs.map((x,i)=>({x,y:mainSignalData.ys[i]})) : []);
+  if (pts.length < 2) {
+    document.getElementById('signal-info').textContent = 'No signal loaded.';
+    return;
+  }
+  const ys = pts.map(p=>p.y);
+  const xs = pts.map(p=>p.x);
+  const maxY = Math.max(...ys).toFixed(3), minY = Math.min(...ys).toFixed(3);
+  const energy = (ys.reduce((a,b)=>a+b*b,0)/ys.length).toFixed(3);
+  const dc = (ys.reduce((a,b)=>a+b,0)/ys.length).toFixed(3);
+  const strokes = mode === 'dts' ? dtsPoints.length + ' pts' : drawStrokes.length + ' strokes';
+  document.getElementById('signal-info').textContent =
+`Type   : ${mode.toUpperCase()}
+Eq     : ${currentEquation||'custom'}
+Max    : ${maxY}
+Min    : ${minY}
+DC     : ${dc}
+Energy : ${energy}
+Drawn  : ${strokes}`;
+}
+
+// ===== VIEW =====
+function zoomIn() { viewXRange = Math.max(2, viewXRange - 2); redrawMain(); }
+function zoomOut() { viewXRange = Math.min(40, viewXRange + 2); redrawMain(); }
+function resetView() { viewXRange = 10; viewYRange = 4; redrawMain(); }
+function toggleGrid() { showGrid = !showGrid; redrawMain(); }
+function applyViewRange() {
+  viewXRange = parseFloat(document.getElementById('view-xrange').value) || 10;
+  viewYRange = parseFloat(document.getElementById('view-yrange').value) || 4;
+  redrawMain();
+}
+
+// ===== EXPORT =====
+function exportCanvas() {
+  const link = document.createElement('a');
+  link.download = `signal_${Date.now()}.png`;
+  link.href = mainCanvas.toDataURL();
+  link.click();
+  showNotif('Canvas exported!');
+}
+
+function copyEquation() {
+  const eq = currentEquation || '—';
+  navigator.clipboard.writeText(eq).then(()=>showNotif('Equation copied: '+eq));
+}
+
+// ===== NOTIFICATIONS =====
+function showNotif(msg) {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2500);
+}
+
+// ===== CANVAS RESIZE =====
+function resizeCanvases() {
+  const area = document.getElementById('canvas-area');
+  const w = area.offsetWidth - 40;
+  mainCanvas.width = Math.max(600, w);
+  transformCanvas.width = Math.max(600, w);
+  dualResult.width = Math.max(600, w);
+  redrawMain();
+}
+
+window.addEventListener('resize', resizeCanvases);
+
+// ===== INIT =====
+function init() {
+  resizeCanvases();
+  currentTool = 'line';
+  document.querySelectorAll('.tool-btn[id^=tool-]').forEach(b => b.classList.remove('active'));
+  document.getElementById('tool-line')?.classList.add('active');
+  redrawMain();
+  updateSignalInfo();
+  updateStrokeUI();
+}
+
+init();
+</script>
+<div id="info-modal"
+  onclick="if(event.target===this)this.style.display='none'"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;max-width:560px;width:90%;max-height:80vh;overflow-y:auto;padding:28px 28px 24px;position:relative">
+    <button onclick="document.getElementById('info-modal').style.display='none'"
+      style="position:absolute;top:14px;right:14px;background:none;border:1px solid var(--border);border-radius:4px;color:var(--text-dim);padding:3px 10px;cursor:pointer;font-family:var(--mono);font-size:0.7rem;transition:all 0.15s"
+      onmouseover="this.style.borderColor='var(--accent2)';this.style.color='var(--accent2)'"
+      onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">✕ Close</button>
+
+    <div style="font-family:var(--mono);font-size:0.68rem;color:var(--accent);letter-spacing:2px;margin-bottom:20px">
+      SIGNALLAB v2.0 — HOW TO USE
+    </div>
+
+    <div style="font-family:var(--sans);font-size:0.82rem;color:var(--text);line-height:1.9">
+
+      <div style="margin-bottom:14px">
+        <span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4)">▸ CTS / DTS MODE</span><br>
+        Toggle between Continuous-Time <b>x(t)</b> and Discrete-Time <b>x[n]</b> using the tabs at the top center.
+      </div>
+
+      <div style="margin-bottom:14px">
+        <span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4)">▸ DRAW TAB</span><br>
+        Draw signals directly on the canvas. <b>Line Seg</b> (default) draws straight segments by click-drag.
+        <b>Freehand</b> follows your mouse. <b>Ramp / Step / Impulse</b> click to place at that x position.
+        <b>Undo</b> removes the last stroke. <b>Analyze</b> derives the x(t) = u(t)/r(t) equation from your drawing.
+        Overlapping x-ranges between strokes are rejected automatically.
+      </div>
+
+      <div style="margin-bottom:14px">
+        <span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4)">▸ EQN→GRAPH TAB</span><br>
+        Type any math expression to plot it. Click the signal chips to append them with <b>+</b> (they accumulate).
+        Supports: <b>u(t), r(t), δ(t), sin, cos, exp, rect, tri, sgn, sinc</b> and arbitrary JS math.
+        Set t start/end to control the plot range.
+      </div>
+
+      <div style="margin-bottom:14px">
+        <span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4)">▸ TRANSFORM TAB</span><br>
+        Applies <b>A · x(at + b)</b> to the current signal. Set <b>a</b> = time scale, <b>b</b> = time shift,
+        <b>A</b> = amplitude scale. Use Quick Transform buttons for one-click common operations.
+        Original signal is shown dimmed; transformed in yellow.
+      </div>
+
+      <div style="margin-bottom:14px">
+        <span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4)">▸ DUAL OPS TAB</span><br>
+        Operate on two signals: <b>Add, Subtract, Multiply, or Convolve</b>.
+        Choose <b>Eqn Form</b> to type expressions, or <b>Draw Graph</b> to draw x₁ and x₂ directly on the canvases.
+        In Draw mode, select which signal to edit using the Edit x₁ / x₂ buttons.
+      </div>
+
+      <div style="margin-bottom:14px">
+        <span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4)">▸ VIEW CONTROLS</span><br>
+        Zoom In/Out, Reset view, toggle Grid. Set custom x-range and y-range and click Apply.
+      </div>
+
+      <div style="margin-bottom:6px">
+        <span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4)">▸ COPY ⎘ & EXPORT</span><br>
+        The <b>⎘</b> button copies only the RHS of the equation to clipboard.
+        <b>↓ Export</b> downloads the main canvas as a PNG image.
+        <b>⎘ Copy Eq</b> in the graph header copies the full equation.
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>
