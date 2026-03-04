@@ -2,7 +2,7 @@
 
 **Author:** Ankan Bhowmik
 **Version:** 1.0
-**License:** MIT
+
 
 A browser-based interactive tool for plotting, analyzing, and transforming continuous-time (CTS) and discrete-time (DTS) signals. Built for signals & systems coursework — no installation required, runs entirely in two HTML files with no frameworks or build step.
 
