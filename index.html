@@ -249,7 +249,7 @@
   flex-direction: column;
   padding: 12px;
   gap: 12px;
-  overflow-y: auto;
+  overflow-y: scroll;
 }
 
   .canvas-area::-webkit-scrollbar { width: 4px; }
@@ -749,6 +749,7 @@
   <div id="cts-eqn-section">
     <label>Signal Expression</label>
     <input type="text" id="eqn-input" placeholder="e.g. u(t), r(t), sin(2*PI*t), e^(-t)*u(t)" value="">
+    <button class="btn btn-secondary" onclick="document.getElementById('eqn-input').value=''" style="margin-top:4px">✕ Clear Input</button>
     <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">
       <div class="eq-chip" onclick="insertEqn('u(t)')">u(t)</div>
       <div class="eq-chip" onclick="insertEqn('r(t)')">r(t)</div>
@@ -765,7 +766,12 @@
       <div><label>t start</label><input type="number" id="t-start" value="-10" step="1"></div>
       <div><label>t end</label><input type="number" id="t-end" value="10" step="1"></div>
     </div>
-    <button class="btn btn-primary" onclick="plotFromEquation()">▶ Plot Equation</button>
+    
+<button class="btn btn-primary" onclick="plotFromEquation()" style="margin-bottom:5px">▶ Plot Equation</button>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+  <button class="btn btn-secondary" onclick="undoStroke()">↩ Undo</button>
+  <button class="btn btn-danger" onclick="clearCanvas('main');currentEquation='';document.getElementById('sb-eq').textContent='—';document.getElementById('fmt-eq-eqn').style.display='none';showNotif('Cleared')">✕ Clear All</button>
+</div>
     <div id="fmt-eq-eqn" class="fmt-equation" style="display:none"></div>
   </div>
 
@@ -811,7 +817,11 @@
     <button class="tool-btn" onclick="quickTransform('flip+shift')">x(−t+1)</button>
   </div>
 
-  <button class="btn btn-primary" onclick="applyTransform()">▶ Apply A·x(at+b)</button>
+<button class="btn btn-primary" onclick="applyTransform()" style="margin-bottom:5px">▶ Apply A·x(at+b)</button>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+  <button class="btn btn-secondary" onclick="document.getElementById('t-a').value='1';document.getElementById('t-b').value='0';document.getElementById('t-amp').value='1';document.getElementById('transform-eq').textContent='—';document.getElementById('fmt-eq-transform').style.display='none';showNotif('Params reset')">↺ Reset Params</button>
+  <button class="btn btn-danger" onclick="document.getElementById('transform-panel').style.display='none';showNotif('Transform cleared')">✕ Clear Result</button>
+</div>
   <button class="btn btn-secondary" onclick="overlayTransform()">⊕ Overlay Both</button>
 
 <div class="equation-display" id="transform-eq">—</div>
@@ -837,8 +847,11 @@
   <div id="dual-eqn-inputs">
     <label style="margin-top:10px">x₁ Signal</label>
     <input type="text" id="dual-x1" placeholder="e.g. u(t), rect(t)" value="">
-    <label>x₂ Signal</label>
+    <button class="btn btn-secondary" onclick="document.getElementById('dual-x1').value=''" style="margin-top:4px">✕ Clear x₁ Input</button>
+
+    <label style="margin-top:10px">x₂ Signal</label>
     <input type="text" id="dual-x2" placeholder="e.g. exp(-t)*u(t)" value="">
+    <button class="btn btn-secondary" onclick="document.getElementById('dual-x2').value=''" style="margin-top:4px">✕ Clear x₂ Input</button>
   </div>
 
   <div id="dual-graph-inputs" style="display:none">
@@ -856,7 +869,11 @@
     </div>
   </div>
 
-  <button class="btn btn-primary" onclick="computeDualOp()">▶ Compute</button>
+<button class="btn btn-primary" onclick="computeDualOp()">▶ Compute</button>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px">
+    <button class="btn btn-secondary" onclick="undoStroke()">↩ Undo</button>
+    <button class="btn btn-danger" onclick="closeDualPanel();document.getElementById('dual-x1').value='';document.getElementById('dual-x2').value='';dualStrokes1=[];dualStrokes2=[];showNotif('Cleared')">✕ Clear All</button>
+  </div>
 </div>
 </div>
 
@@ -893,9 +910,11 @@ No signal loaded.
       <div class="graph-panel" id="main-panel">
         <div class="graph-header">
           <div class="graph-title">
-            <span id="main-label">x(t)</span> — Main Signal
-            <span class="badge cts" id="mode-badge">CTS</span>
-          </div>
+  <span id="main-label">x(t)</span> — Main Signal
+  <span class="badge cts" id="mode-badge">CTS</span>
+  <span id="transform-badge" style="display:none;font-family:var(--mono);font-size:0.68rem;color:var(--accent4);margin-left:8px"></span>
+</div>
+          
           <div class="graph-actions">
             <button class="icon-btn" onclick="exportCanvas()">↓ Export</button>
             <button class="icon-btn" onclick="copyEquation()">⎘ Copy Eq</button>
@@ -982,6 +1001,7 @@ let strokeUndoStack = []; // for undo
 
 let currentEquation = '';
 let mainSignalData = null; // {xs, ys} from equation plot
+let transformOverlay = null; // {origData, transData} when transform is active
 
 // Canvas refs
 const mainCanvas = document.getElementById('main-canvas');
@@ -1243,7 +1263,17 @@ function plotImpulse(ctx, canvas, x0, amp, color, xrange, yrange) {
 
 // ===== MAIN CANVAS DRAW =====
 function redrawMain() {
-  drawAxes(mc, mainCanvas, viewXRange, viewYRange, mode==='cts'?'t':'n');
+    drawAxes(mc, mainCanvas, viewXRange, viewYRange, mode==='cts'?'t':'n');
+
+  if (transformOverlay) {
+    mc.globalAlpha = 0.25;
+    if (mode === 'cts') plotCTS(mc, mainCanvas, transformOverlay.origData.xs, transformOverlay.origData.ys, '#00d4ff', viewXRange, viewYRange);
+    else plotDTS(mc, mainCanvas, transformOverlay.origData.xs, transformOverlay.origData.ys, '#00d4ff', viewXRange, viewYRange);
+    mc.globalAlpha = 1;
+    if (mode === 'cts') plotCTS(mc, mainCanvas, transformOverlay.transData.xs, transformOverlay.transData.ys, '#ffcc44', viewXRange, viewYRange, true);
+    else plotDTS(mc, mainCanvas, transformOverlay.transData.xs, transformOverlay.transData.ys, '#ffcc44', viewXRange, viewYRange);
+    return;
+  }
 
   if (mainSignalData) {
     if (mode === 'cts') {
@@ -1611,18 +1641,23 @@ const raw = document.getElementById('eqn-input').value.trim();
   showNotif(`Plotted: ${expr}`);
   
 }
+
 function sanitizeExpr(expr) {
   return expr
-    .replace(/−/g, '-')           // unicode minus → ASCII
-    .replace(/·/g, '*')           // unicode dot → asterisk
+    .replace(/−/g, '-')
+    .replace(/·/g, '*')
     .replace(/\u2212/g, '-')
     .replace(/\u00B7/g, '*')
-    .replace(/\s+/g, ' ')
-    .trim()
-    // implicit multiplication: "2 u(" → "2*u(",  "2 r(" → "2*r("
-    .replace(/(\d)\s+(u|r|delta|rect|tri|sgn|sinc|sin|cos|exp|abs)\(/g, '$1*$2(')
-    // also handle ") u(" → ")*u(" for chained terms like exp(-t)*u(t) written as "exp(-t) u(t)"
-    .replace(/\)\s+(u|r|delta|rect|tri|sgn|sinc|sin|cos|exp|abs)\(/g, ')*$1(');
+    .replace(/\^/g, '**')
+    // implicit multiply: full number (int or decimal) before t
+    .replace(/(\d*\.?\d+)\s*\*?\s*(t\b)/g, (match, num, tvar) => `${num}*${tvar}`)
+    // clean up any double stars created
+    .replace(/\*{2,}(?!\*)/g, '*')
+    // implicit multiply: number before function call
+    .replace(/(\d*\.?\d+)\s*(u|r|delta|rect|tri|sgn|sinc|sin|cos|exp|abs)\(/g, '$1*$2(')
+    // implicit multiply: closing paren before function
+    .replace(/\)\s*(u|r|delta|rect|tri|sgn|sinc|sin|cos|exp|abs)\(/g, ')*$1(')
+    .trim();
 }
 
 // ===== ANALYZE SIGNAL =====
@@ -2032,7 +2067,7 @@ function applyTransform() {
   let origEq = currentEquation || document.getElementById('eqn-input').value || 'u(t)';
   let transformedEq = buildTransformEq(origEq, a, b, A);
 
-  document.getElementById('transform-panel').style.display = 'block';
+document.getElementById('transform-panel').style.display = 'none';
   document.getElementById('transform-label').textContent = transformedEq;
   document.getElementById('transform-eq').textContent = transformedEq;
   document.getElementById('transform-eq-info').textContent = transformedEq;
@@ -2053,14 +2088,14 @@ function applyTransform() {
   // Apply amplitude scaling
   transData.ys = transData.ys.map(y => y * A);
 
-  drawAxes(tc, transformCanvas, viewXRange, viewYRange, mode === 'cts' ? 't' : 'n');
-  plotCTS(tc, transformCanvas, origData.xs, origData.ys, 'rgba(80,120,160,0.35)', viewXRange, viewYRange);
-  if (mode === 'cts') plotCTS(tc, transformCanvas, transData.xs, transData.ys, '#ffcc44', viewXRange, viewYRange, true);
-  else plotDTS(tc, transformCanvas, transData.xs, transData.ys, '#ffcc44', viewXRange, viewYRange);
+transformOverlay = { origData, transData };
+redrawMain();
 
 document.getElementById('transform-eq').textContent = transformedEq;
   document.getElementById('sb-eq').textContent = transformedEq;
-  showNotif(`Transformed: ${transformedEq}`);
+showNotif(`Transformed: ${transformedEq}`);
+document.getElementById('transform-badge').textContent = `→ ${transformedEq}`;
+document.getElementById('transform-badge').style.display = 'inline';
 
   // Show formatted equation in transform panel
   const fmtEl = document.getElementById('fmt-eq-transform');
@@ -2602,6 +2637,9 @@ function clearCanvas(which) {
     mainSignalData = null;
     currentEquation = '';
     strokeUndoStack = [];
+    transformOverlay = null;
+    document.getElementById('transform-badge').style.display = 'none';
+    document.getElementById('transform-badge').textContent = '';
     document.getElementById('sb-eq').textContent = '—';
     document.getElementById('sb-signal').textContent = '—';
     document.getElementById('conflict-warn').style.display = 'none';
@@ -2701,7 +2739,7 @@ function resizeCanvases() {
   mainCanvas.width = Math.max(600, w);
   mainCanvas.height = h;
   transformCanvas.width = Math.max(600, w);
-  transformCanvas.height = Math.max(360, h - 80);
+transformCanvas.height = Math.max(260, Math.floor(h * 0.55));
   dualResult.width = Math.max(600, w);
   dualResult.height = Math.max(300, Math.floor(h * 0.55));
   const dualW = Math.max(380, Math.floor((w - 20) / 2));
