@@ -1,15 +1,17 @@
-# SignalLab v1.0 — Signal & Systems Plotter
+# SignalLab v1.0 - Signal & Systems Plotter
 
 **Author:** Ankan Bhowmik
 **Version:** 1.0
 
 
-A browser-based interactive tool for plotting, analyzing, and transforming continuous-time (CTS) and discrete-time (DTS) signals. Built for signals & systems coursework — no installation required, runs entirely in two HTML files with no frameworks or build step.
+A browser-based interactive tool for plotting, analyzing, and transforming continuous-time (CTS) and discrete-time (DTS) signals. Built for signals & systems coursework - no installation required, runs entirely in two HTML files with no frameworks or build step.
 
 ---
 
 ## Getting Started
 
+Open https://signal-lab-mu.vercel.app/
+or,
 Download both files and open `index.html` in any modern browser. No server, no dependencies, no install.
 
 ```
@@ -217,3 +219,6 @@ No frameworks. No build step. No backend. Open and use.
 ---
 
 *SignalLab v1.0 — built by Ankan Bhowmik*
+
+Visit My Portfolio: https://ankanbhowmik.vercel.app
+Visit another tool created by me, MatrixPlay: https://matrixplay.vercel.app/
