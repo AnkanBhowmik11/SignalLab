@@ -249,7 +249,7 @@
   flex-direction: column;
   padding: 12px;
   gap: 12px;
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 
   .canvas-area::-webkit-scrollbar { width: 4px; }
@@ -844,36 +844,53 @@
     <button class="tool-btn" id="op-conv" onclick="setDualOp('conv')">★ Convolve</button>
   </div>
 
-  <div id="dual-eqn-inputs">
-    <label style="margin-top:10px">x₁ Signal</label>
-    <input type="text" id="dual-x1" placeholder="e.g. u(t), rect(t)" value="">
-    <button class="btn btn-secondary" onclick="document.getElementById('dual-x1').value=''" style="margin-top:4px">✕ Clear x₁ Input</button>
-
-    <label style="margin-top:10px">x₂ Signal</label>
-    <input type="text" id="dual-x2" placeholder="e.g. exp(-t)*u(t)" value="">
-    <button class="btn btn-secondary" onclick="document.getElementById('dual-x2').value=''" style="margin-top:4px">✕ Clear x₂ Input</button>
+<div id="dual-eqn-inputs">
+  <label style="margin-top:10px">x₁ Signal</label>
+  <div style="position:relative">
+    <input type="text" id="dual-x1" placeholder="e.g. u(t), rect(t)" value="" style="padding-right:28px">
+    <button onclick="document.getElementById('dual-x1').value=''"
+      style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);font-size:0.8rem;cursor:pointer;line-height:1;padding:2px 4px;transition:color 0.15s"
+      onmouseover="this.style.color='var(--accent2)'" onmouseout="this.style.color='var(--text-dim)'">✕</button>
   </div>
+  <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">
+    <div class="eq-chip" onclick="document.getElementById('dual-x1').value='u(t)'">u(t)</div>
+    <div class="eq-chip" onclick="document.getElementById('dual-x1').value='r(t)'">r(t)</div>
+    <div class="eq-chip" onclick="document.getElementById('dual-x1').value='delta(t)'">δ(t)</div>
+    <div class="eq-chip" onclick="document.getElementById('dual-x1').value='sin(2*PI*t)'">sin</div>
+    <div class="eq-chip" onclick="document.getElementById('dual-x1').value='cos(2*PI*t)'">cos</div>
+    <div class="eq-chip" onclick="document.getElementById('dual-x1').value='exp(-t)*u(t)'">e⁻ᵗu(t)</div>
+    <div class="eq-chip" onclick="document.getElementById('dual-x1').value='rect(t)'">rect(t)</div>
+    <div class="eq-chip" onclick="document.getElementById('dual-x1').value='tri(t)'">tri(t)</div>
+  </div>
+
+  <label style="margin-top:12px">x₂ Signal</label>
+  <div style="position:relative">
+    <input type="text" id="dual-x2" placeholder="e.g. exp(-t)*u(t)" value="" style="padding-right:28px">
+    <button onclick="document.getElementById('dual-x2').value=''"
+      style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);font-size:0.8rem;cursor:pointer;line-height:1;padding:2px 4px;transition:color 0.15s"
+      onmouseover="this.style.color='var(--accent2)'" onmouseout="this.style.color='var(--text-dim)'">✕</button>
+  </div>
+  <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">
+    <div class="eq-chip" onclick="document.getElementById('dual-x2').value='u(t)'">u(t)</div>
+    <div class="eq-chip" onclick="document.getElementById('dual-x2').value='r(t)'">r(t)</div>
+    <div class="eq-chip" onclick="document.getElementById('dual-x2').value='delta(t)'">δ(t)</div>
+    <div class="eq-chip" onclick="document.getElementById('dual-x2').value='sin(2*PI*t)'">sin</div>
+    <div class="eq-chip" onclick="document.getElementById('dual-x2').value='cos(2*PI*t)'">cos</div>
+    <div class="eq-chip" onclick="document.getElementById('dual-x2').value='exp(-t)*u(t)'">e⁻ᵗu(t)</div>
+    <div class="eq-chip" onclick="document.getElementById('dual-x2').value='rect(t)'">rect(t)</div>
+    <div class="eq-chip" onclick="document.getElementById('dual-x2').value='tri(t)'">tri(t)</div>
+  </div>
+</div>
 
   <div id="dual-graph-inputs" style="display:none">
-    <div style="margin-top:10px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:0.67rem;color:var(--accent)">
-      Draw on the canvases on the right.<br>
-      <span style="color:var(--text-dim)">Active signal: </span><span id="dual-active-signal" style="color:var(--accent4)">x₁</span>
-    </div>
-    <div class="tool-grid" style="margin-top:8px">
-      <button class="tool-btn active" id="dual-target-1" onclick="setDualDrawTarget(1)">✏ Draw x₁</button>
-      <button class="tool-btn" id="dual-target-2" onclick="setDualDrawTarget(2)">✏ Draw x₂</button>
-    </div>
-    <div class="tool-grid" style="margin-top:6px">
-      <button class="tool-btn danger" onclick="dualStrokes1=[];dualStrokes2=[];redrawDualCanvas(1);redrawDualCanvas(2);">✕ Clear Both</button>
-      <button class="tool-btn" onclick="(dualDrawTarget===1?dualStrokes1:dualStrokes2).pop();redrawDualCanvas(dualDrawTarget)">↩ Undo</button>
-    </div>
+  <div style="margin-top:10px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:0.67rem;color:var(--accent)">
+    Draw x₁ on the <span style="color:#00d4ff">left canvas</span>, x₂ on the <span style="color:#ff6b6b">right canvas</span>.
   </div>
+  <button class="btn btn-danger" style="margin-top:8px" onclick="dualStrokes1=[];dualStrokes2=[];redrawDualCanvas(1);redrawDualCanvas(2);">✕ Clear Both</button>
+</div>
 
 <button class="btn btn-primary" onclick="computeDualOp()">▶ Compute</button>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px">
-    <button class="btn btn-secondary" onclick="undoStroke()">↩ Undo</button>
-    <button class="btn btn-danger" onclick="closeDualPanel();document.getElementById('dual-x1').value='';document.getElementById('dual-x2').value='';dualStrokes1=[];dualStrokes2=[];showNotif('Cleared')">✕ Clear All</button>
-  </div>
+
 </div>
 </div>
 
@@ -910,11 +927,9 @@ No signal loaded.
       <div class="graph-panel" id="main-panel">
         <div class="graph-header">
           <div class="graph-title">
-  <span id="main-label">x(t)</span> — Main Signal
-  <span class="badge cts" id="mode-badge">CTS</span>
-  <span id="transform-badge" style="display:none;font-family:var(--mono);font-size:0.68rem;color:var(--accent4);margin-left:8px"></span>
-</div>
-          
+            <span id="main-label">x(t)</span> — Main Signal
+            <span class="badge cts" id="mode-badge">CTS</span>
+          </div>
           <div class="graph-actions">
             <button class="icon-btn" onclick="exportCanvas()">↓ Export</button>
             <button class="icon-btn" onclick="copyEquation()">⎘ Copy Eq</button>
@@ -1001,7 +1016,6 @@ let strokeUndoStack = []; // for undo
 
 let currentEquation = '';
 let mainSignalData = null; // {xs, ys} from equation plot
-let transformOverlay = null; // {origData, transData} when transform is active
 
 // Canvas refs
 const mainCanvas = document.getElementById('main-canvas');
@@ -1263,17 +1277,7 @@ function plotImpulse(ctx, canvas, x0, amp, color, xrange, yrange) {
 
 // ===== MAIN CANVAS DRAW =====
 function redrawMain() {
-    drawAxes(mc, mainCanvas, viewXRange, viewYRange, mode==='cts'?'t':'n');
-
-  if (transformOverlay) {
-    mc.globalAlpha = 0.25;
-    if (mode === 'cts') plotCTS(mc, mainCanvas, transformOverlay.origData.xs, transformOverlay.origData.ys, '#00d4ff', viewXRange, viewYRange);
-    else plotDTS(mc, mainCanvas, transformOverlay.origData.xs, transformOverlay.origData.ys, '#00d4ff', viewXRange, viewYRange);
-    mc.globalAlpha = 1;
-    if (mode === 'cts') plotCTS(mc, mainCanvas, transformOverlay.transData.xs, transformOverlay.transData.ys, '#ffcc44', viewXRange, viewYRange, true);
-    else plotDTS(mc, mainCanvas, transformOverlay.transData.xs, transformOverlay.transData.ys, '#ffcc44', viewXRange, viewYRange);
-    return;
-  }
+  drawAxes(mc, mainCanvas, viewXRange, viewYRange, mode==='cts'?'t':'n');
 
   if (mainSignalData) {
     if (mode === 'cts') {
@@ -1643,19 +1647,21 @@ const raw = document.getElementById('eqn-input').value.trim();
 }
 
 function sanitizeExpr(expr) {
+  // Convert |expr| → abs(expr) — handle nested by repeated pass
+  let prev = '';
+  while (prev !== expr) {
+    prev = expr;
+    expr = expr.replace(/\|([^|]+)\|/g, 'abs($1)');
+  }
   return expr
     .replace(/−/g, '-')
     .replace(/·/g, '*')
     .replace(/\u2212/g, '-')
     .replace(/\u00B7/g, '*')
     .replace(/\^/g, '**')
-    // implicit multiply: full number (int or decimal) before t
     .replace(/(\d*\.?\d+)\s*\*?\s*(t\b)/g, (match, num, tvar) => `${num}*${tvar}`)
-    // clean up any double stars created
     .replace(/\*{2,}(?!\*)/g, '*')
-    // implicit multiply: number before function call
     .replace(/(\d*\.?\d+)\s*(u|r|delta|rect|tri|sgn|sinc|sin|cos|exp|abs)\(/g, '$1*$2(')
-    // implicit multiply: closing paren before function
     .replace(/\)\s*(u|r|delta|rect|tri|sgn|sinc|sin|cos|exp|abs)\(/g, ')*$1(')
     .trim();
 }
@@ -2067,7 +2073,7 @@ function applyTransform() {
   let origEq = currentEquation || document.getElementById('eqn-input').value || 'u(t)';
   let transformedEq = buildTransformEq(origEq, a, b, A);
 
-document.getElementById('transform-panel').style.display = 'none';
+  document.getElementById('transform-panel').style.display = 'block';
   document.getElementById('transform-label').textContent = transformedEq;
   document.getElementById('transform-eq').textContent = transformedEq;
   document.getElementById('transform-eq-info').textContent = transformedEq;
@@ -2088,14 +2094,14 @@ document.getElementById('transform-panel').style.display = 'none';
   // Apply amplitude scaling
   transData.ys = transData.ys.map(y => y * A);
 
-transformOverlay = { origData, transData };
-redrawMain();
+  drawAxes(tc, transformCanvas, viewXRange, viewYRange, mode === 'cts' ? 't' : 'n');
+  plotCTS(tc, transformCanvas, origData.xs, origData.ys, 'rgba(80,120,160,0.35)', viewXRange, viewYRange);
+  if (mode === 'cts') plotCTS(tc, transformCanvas, transData.xs, transData.ys, '#ffcc44', viewXRange, viewYRange, true);
+  else plotDTS(tc, transformCanvas, transData.xs, transData.ys, '#ffcc44', viewXRange, viewYRange);
 
 document.getElementById('transform-eq').textContent = transformedEq;
   document.getElementById('sb-eq').textContent = transformedEq;
-showNotif(`Transformed: ${transformedEq}`);
-document.getElementById('transform-badge').textContent = `→ ${transformedEq}`;
-document.getElementById('transform-badge').style.display = 'inline';
+  showNotif(`Transformed: ${transformedEq}`);
 
   // Show formatted equation in transform panel
   const fmtEl = document.getElementById('fmt-eq-transform');
@@ -2182,50 +2188,65 @@ function computeDualOp() {
   const N = mode === 'cts' ? 800 : Math.round(2 * viewXRange) + 1;
   let d1, d2;
 
-  if (dualInputMode === 'graph') {
-    const resample = (strokes, tStart, tEnd, N) => {
-      const xs = [], ys = [];
-      const dt = (tEnd - tStart) / N;
+if (dualInputMode === 'graph') {
+    if (mode === 'dts') {
+      // DTS: extract integer stem points from strokes
+      const extractDTS = (strokes) => {
+        const map = {};
+        strokes.forEach(s => s.forEach(p => {
+          const n = Math.round(p.x);
+          map[n] = p.y;
+        }));
+        const xs = Object.keys(map).map(Number).sort((a, b) => a - b);
+        const ys = xs.map(n => map[n]);
+        return { xs, ys };
+      };
+      d1 = extractDTS(dualStrokes1);
+      d2 = extractDTS(dualStrokes2);
+      if (!d1.xs.length || !d2.xs.length) { showNotif('Draw both signals first'); return; }
 
-      for (let i = 0; i <= N; i++) {
-        const t = tStart + i * dt;
-        xs.push(t);
-        let found = false;
+      // Union of all n indices, treat missing as 0
+      const allN = [...new Set([...d1.xs, ...d2.xs])].sort((a, b) => a - b);
+      const map1 = Object.fromEntries(d1.xs.map((x, i) => [x, d1.ys[i]]));
+      const map2 = Object.fromEntries(d2.xs.map((x, i) => [x, d2.ys[i]]));
+      d1 = { xs: allN, ys: allN.map(n => map1[n] ?? 0) };
+      d2 = { xs: allN, ys: allN.map(n => map2[n] ?? 0) };
 
-        for (const stroke of strokes) {
-          if (stroke.length < 2) continue;
-          const sorted = stroke.slice().sort((a, b) => a.x - b.x);
-          const xmin = sorted[0].x;
-          const xmax = sorted[sorted.length - 1].x;
-
-          // Skip vertical strokes
-          if (Math.abs(xmax - xmin) < 0.01) continue;
-
-          if (t < xmin || t > xmax) continue;
-
-          for (let j = 0; j < sorted.length - 1; j++) {
-            const dx = sorted[j + 1].x - sorted[j].x;
-            if (dx < 1e-10) continue;
-            if (sorted[j].x <= t && t <= sorted[j + 1].x) {
-              const frac = (t - sorted[j].x) / dx;
-              ys.push(sorted[j].y + frac * (sorted[j + 1].y - sorted[j].y));
-              found = true;
-              break;
+    } else {
+      // CTS resample
+      const resample = (strokes, tStart, tEnd, N) => {
+        const xs = [], ys = [];
+        const dt = (tEnd - tStart) / N;
+        for (let i = 0; i <= N; i++) {
+          const t = tStart + i * dt;
+          xs.push(t);
+          let found = false;
+          for (const stroke of strokes) {
+            if (stroke.length < 2) continue;
+            const sorted = stroke.slice().sort((a, b) => a.x - b.x);
+            const xmin = sorted[0].x, xmax = sorted[sorted.length - 1].x;
+            if (Math.abs(xmax - xmin) < 0.01) continue;
+            if (t < xmin || t > xmax) continue;
+            for (let j = 0; j < sorted.length - 1; j++) {
+              const dx = sorted[j + 1].x - sorted[j].x;
+              if (dx < 1e-10) continue;
+              if (sorted[j].x <= t && t <= sorted[j + 1].x) {
+                const frac = (t - sorted[j].x) / dx;
+                ys.push(sorted[j].y + frac * (sorted[j + 1].y - sorted[j].y));
+                found = true;
+                break;
+              }
             }
+            if (found) break;
           }
-          if (found) break;
+          if (!found) ys.push(0);
         }
-
-        if (!found) ys.push(0);
-      }
-
-      return { xs, ys };
-    };
-
-    d1 = resample(dualStrokes1, tStart, tEnd, N);
-    d2 = resample(dualStrokes2, tStart, tEnd, N);
-    if (!d1.xs.length || !d2.xs.length) { showNotif('Draw both signals first'); return; }
-
+        return { xs, ys };
+      };
+      d1 = resample(dualStrokes1, tStart, tEnd, N);
+      d2 = resample(dualStrokes2, tStart, tEnd, N);
+      if (!d1.xs.length || !d2.xs.length) { showNotif('Draw both signals first'); return; }
+    }
   } else {
     const x1expr = document.getElementById('dual-x1').value;
     const x2expr = document.getElementById('dual-x2').value;
@@ -2321,9 +2342,11 @@ function setDualInputMode(m) {
   document.getElementById('dual-mode-graph').classList.toggle('active', m === 'graph');
   if (m === 'graph') {
     document.getElementById('dual-panel').style.display = 'block';
-    drawAxes(dc1, dualCanvas1, viewXRange, viewYRange);
-    drawAxes(dc2, dualCanvas2, viewXRange, viewYRange);
+    drawAxes(dc1, dualCanvas1, viewXRange, viewYRange, mode === 'dts' ? 'n' : 't');
+    drawAxes(dc2, dualCanvas2, viewXRange, viewYRange, mode === 'dts' ? 'n' : 't');
     if (!dualDrawingEnabled) { enableDualDrawing(); dualDrawingEnabled = true; }
+    // Always draw on respective canvas directly — no target selection needed
+    dualDrawTarget = 1; // default, overridden per-canvas in enableDualDrawing
   }
 }
 
@@ -2341,10 +2364,24 @@ function enableDualDrawing() {
     let startPt = null;
 
 canvas.addEventListener('mousedown', e => {
-  if (dualInputMode !== 'graph' || dualDrawTarget !== n) return;
-  drawing = true;
+  if (dualInputMode !== 'graph') return;
+  dualDrawTarget = n; // each canvas always owns its signal
   const d = getDualData(e, canvas);
-  // Force integer snap on record
+
+  if (mode === 'dts') {
+    // DTS: single click places a stem
+    const ix = Math.round(d.x);
+    const iy = d.didSnapY ? Math.round(d.y) : parseFloat(d.y.toFixed(2));
+    const target = n === 1 ? dualStrokes1 : dualStrokes2;
+    // Remove existing at same n, then add
+    const filtered = target.filter(s => !(s.length === 1 && Math.round(s[0].x) === ix));
+    filtered.push([{ x: ix, y: iy }]);
+    if (n === 1) dualStrokes1 = filtered; else dualStrokes2 = filtered;
+    redrawDualCanvas(n);
+    return;
+  }
+
+  drawing = true;
   startPt = {
     x: d.didSnapX ? Math.round(d.x) : d.x,
     y: d.didSnapY ? Math.round(d.y) : d.y,
@@ -2468,10 +2505,21 @@ function redrawDualCanvas(n, live = []) {
   const ctx = n === 1 ? dc1 : dc2;
   const strokes = n === 1 ? dualStrokes1 : dualStrokes2;
   const color = n === 1 ? '#00d4ff' : '#ff6b6b';
-  drawAxes(ctx, canvas, viewXRange, viewYRange);
-  strokes.forEach(s => {
-    if (s.length > 1) plotCTS(ctx, canvas, s.map(p => p.x), s.map(p => p.y), color, viewXRange, viewYRange, true);
-  });
+  drawAxes(ctx, canvas, viewXRange, viewYRange, mode === 'dts' ? 'n' : 't');
+  if (mode === 'dts') {
+    // Flatten strokes into unique integer points
+    const pts = [];
+    strokes.forEach(s => s.forEach(p => {
+      const n = Math.round(p.x);
+      if (!pts.find(q => q.x === n)) pts.push({ x: n, y: p.y });
+    }));
+    pts.sort((a, b) => a.x - b.x);
+    plotDTS(ctx, canvas, pts.map(p => p.x), pts.map(p => p.y), color, viewXRange, viewYRange);
+  } else {
+    strokes.forEach(s => {
+      if (s.length > 1) plotCTS(ctx, canvas, s.map(p => p.x), s.map(p => p.y), color, viewXRange, viewYRange, true);
+    });
+  }
   if (live.length > 1) plotCTS(ctx, canvas, live.map(p => p.x), live.map(p => p.y), 'rgba(255,255,255,0.25)', viewXRange, viewYRange);
 }
 
@@ -2637,9 +2685,6 @@ function clearCanvas(which) {
     mainSignalData = null;
     currentEquation = '';
     strokeUndoStack = [];
-    transformOverlay = null;
-    document.getElementById('transform-badge').style.display = 'none';
-    document.getElementById('transform-badge').textContent = '';
     document.getElementById('sb-eq').textContent = '—';
     document.getElementById('sb-signal').textContent = '—';
     document.getElementById('conflict-warn').style.display = 'none';
@@ -2739,7 +2784,7 @@ function resizeCanvases() {
   mainCanvas.width = Math.max(600, w);
   mainCanvas.height = h;
   transformCanvas.width = Math.max(600, w);
-transformCanvas.height = Math.max(260, Math.floor(h * 0.55));
+  transformCanvas.height = Math.max(360, h - 80);
   dualResult.width = Math.max(600, w);
   dualResult.height = Math.max(300, Math.floor(h * 0.55));
   const dualW = Math.max(380, Math.floor((w - 20) / 2));
@@ -2870,59 +2915,80 @@ init();
 
     <div style="font-family:var(--sans);font-size:0.82rem;color:var(--text);line-height:1.9">
 
-      <div style="margin-bottom:14px">
-        <span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4)">▸ CTS / DTS MODE</span><br>
-        Toggle between Continuous-Time <b>x(t)</b> and Discrete-Time <b>x[n]</b> using the tabs at the top center.
-      </div>
+  <div style="margin-bottom:16px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:0.7rem;color:var(--text-dim)">
+    SignalLab lets you <span style="color:var(--accent)">draw</span>, <span style="color:var(--accent4)">plot from equations</span>, <span style="color:var(--accent3)">transform</span>, and <span style="color:var(--accent2)">combine</span> signals — all in your browser.
+  </div>
 
-      <div style="margin-bottom:14px">
-        <span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4)">▸ DRAW TAB</span><br>
-        Draw signals directly on the canvas. <b>Line Seg</b> (default) draws straight segments by click-drag.
-        <b>Freehand</b> follows your mouse. <b>Ramp / Step / Impulse</b> click to place at that x position.
-        <b>Undo</b> removes the last stroke. <b>Analyze</b> derives the x(t) = u(t)/r(t) equation from your drawing.
-        Overlapping x-ranges between strokes are rejected automatically.
-      </div>
+  <!-- STEP 1 -->
+  <div style="margin-bottom:14px">
+    <span style="font-family:var(--mono);font-size:0.68rem;color:var(--accent4)">① PICK YOUR SIGNAL TYPE</span><br>
+    Use the <b>CTS x(t)</b> / <b>DTS x[n]</b> toggle at the top to switch between continuous-time and discrete-time mode. Everything — drawing, equations, transforms — adapts automatically.
+  </div>
 
-      <div style="margin-bottom:14px">
-        <span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4)">▸ EQN→GRAPH TAB</span><br>
-        Type any math expression to plot it. Click the signal chips to append them with <b>+</b> (they accumulate).
-        Supports: <b>u(t), r(t), δ(t), sin, cos, exp, rect, tri, sgn, sinc</b> and arbitrary JS math.
-        Set t start/end to control the plot range.
-      </div>
+  <!-- STEP 2 -->
+  <div style="margin-bottom:14px">
+    <span style="font-family:var(--mono);font-size:0.68rem;color:var(--accent4)">② DRAW A SIGNAL  <span style="color:var(--text-dim);font-weight:400">→ Draw tab</span></span><br>
+    <b>Line Seg</b> — click and drag to draw a straight line piece. This is the default.<br>
+    <b>Freehand</b> — draw freely by moving your mouse while holding.<br>
+    <b>Step / Ramp / Impulse</b> — click anywhere on the canvas to place u(t), r(t), or δ(t) at that x position.<br>
+    <b>Undo</b> removes the last stroke. <b>Clear All</b> resets the canvas.<br>
+    <span style="color:var(--text-dim);font-size:0.75rem">⚠ Two strokes cannot overlap on the x-axis — the second one will be rejected.</span><br>
+    After drawing, hit <b>⚡ Analyze Signal</b> to auto-generate the x(t) equation in u(t)/r(t) form.
+  </div>
 
-      <div style="margin-bottom:14px">
-        <span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4)">▸ TRANSFORM TAB</span><br>
-        Applies <b>A · x(at + b)</b> to the current signal. Set <b>a</b> = time scale, <b>b</b> = time shift,
-        <b>A</b> = amplitude scale. Use Quick Transform buttons for one-click common operations.
-        Original signal is shown dimmed; transformed in yellow.
-      </div>
+  <!-- STEP 3 -->
+  <div style="margin-bottom:14px">
+    <span style="font-family:var(--mono);font-size:0.68rem;color:var(--accent4)">③ PLOT FROM AN EQUATION  <span style="color:var(--text-dim);font-weight:400">→ Eqn→Graph tab</span></span><br>
+    Type any expression like <code style="background:var(--bg);padding:1px 5px;border-radius:3px;color:var(--accent)">exp(-t)*u(t)</code> or click the signal chips to insert them.<br>
+    Chips <b>set</b> the input — just click one and hit <b>▶ Plot</b>.<br>
+    Set <b>t start</b> and <b>t end</b> to control how much of the signal is shown.<br>
+    <span style="color:var(--text-dim);font-size:0.75rem">In DTS mode, use the Array Input section to enter values like <code style="background:var(--bg);padding:1px 4px;border-radius:3px">0, 1, 2, 1, 0</code> with an origin index.</span>
+  </div>
 
-      <div style="margin-bottom:14px">
-        <span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4)">▸ DUAL OPS TAB</span><br>
-        Operate on two signals: <b>Add, Subtract, Multiply, or Convolve</b>.
-        Choose <b>Eqn Form</b> to type expressions, or <b>Draw Graph</b> to draw x₁ and x₂ directly on the canvases.
-        In Draw mode, select which signal to edit using the Edit x₁ / x₂ buttons.
-      </div>
+  <!-- STEP 4 -->
+  <div style="margin-bottom:14px">
+    <span style="font-family:var(--mono);font-size:0.68rem;color:var(--accent4)">④ TRANSFORM A SIGNAL  <span style="color:var(--text-dim);font-weight:400">→ Transform tab</span></span><br>
+    Applies <b>A · x(at + b)</b> to whatever signal is currently on the canvas.<br>
+    <b>a</b> = compress/expand time &nbsp;|&nbsp; <b>b</b> = shift left/right &nbsp;|&nbsp; <b>A</b> = scale amplitude<br>
+    Use the <b>Quick Transform</b> buttons for one-click operations like reverse, shift, compress.<br>
+    The original signal is shown dimmed; the result is shown in <span style="color:var(--accent4)">yellow</span>.
+  </div>
 
-      <div style="margin-bottom:14px">
-        <span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4)">▸ VIEW CONTROLS</span><br>
-        Zoom In/Out, Reset view, toggle Grid. Set custom x-range and y-range and click Apply.
-      </div>
+  <!-- STEP 5 -->
+  <div style="margin-bottom:14px">
+    <span style="font-family:var(--mono);font-size:0.68rem;color:var(--accent4)">⑤ COMBINE TWO SIGNALS  <span style="color:var(--text-dim);font-weight:400">→ Dual Ops tab</span></span><br>
+    Choose an operation: <b>Add, Subtract, Multiply,</b> or <b>Convolve</b>.<br><br>
+    <b>Eqn Form</b> — type x₁ and x₂ as equations, use chips to fill them quickly.<br>
+    <b>Draw Graph</b> — draw directly: the <span style="color:#00d4ff">left canvas</span> is always x₁, the <span style="color:#ff6b6b">right canvas</span> is always x₂. No mode switching needed.<br><br>
+    Hit <b>▶ Compute</b> to see the result below in <span style="color:var(--accent3)">green</span>.
+  </div>
 
-      <div style="margin-bottom:6px">
-        <span style="font-family:var(--mono);font-size:0.7rem;color:var(--accent4)">▸ COPY ⎘ & EXPORT</span><br>
-        The <b>⎘</b> button copies only the RHS of the equation to clipboard.
-        <b>↓ Export</b> downloads the main canvas as a PNG image.
-        <b>⎘ Copy Eq</b> in the graph header copies the full equation.
-      </div>
+  <!-- STEP 6 -->
+  <div style="margin-bottom:14px">
+    <span style="font-family:var(--mono);font-size:0.68rem;color:var(--accent4)">⑥ VIEW CONTROLS  <span style="color:var(--text-dim);font-weight:400">→ View section</span></span><br>
+    <b>Zoom In / Out</b> adjusts the x-range. <b>Reset</b> returns to default view.<br>
+    <b>Grid</b> toggles the background grid on/off.<br>
+    Set a custom <b>x range</b> and <b>y range</b> and click <b>Apply Range</b> for precise control.
+  </div>
 
-      <div style="margin-top:20px;font-size:0.75rem;color:var(--text-dim);">
-        <hr style="border-color:var(--border);margin:12px 0">
-        <div>Created by <b>Ankan Bhowmik</b>. Visit <a href="https://ankanbhowmik.vercel.app" target="_blank" style="color:var(--accent);text-decoration:none">My Portfolio</a>.</div>
-        <div style="margin-top:4px">Try my other tool <a href="https://matrixplay.vercel.app/" target="_blank" style="color:var(--accent);text-decoration:none">MatrixPlay</a>.</div>
-      </div>
-
+  <!-- TIPS -->
+  <div style="margin-bottom:6px;background:rgba(127,255,127,0.04);border:1px solid rgba(127,255,127,0.12);border-radius:8px;padding:10px 14px">
+    <div style="font-family:var(--mono);font-size:0.65rem;color:var(--accent3);margin-bottom:6px">QUICK TIPS</div>
+    <div style="font-size:0.78rem;line-height:2">
+      🟡 A <span style="color:var(--accent4)">gold ring</span> on the canvas means your cursor is snapping to an integer point.<br>
+      ⎘ The <b>copy button</b> on any equation copies just the right-hand side to clipboard.<br>
+      ↓ <b>Export</b> saves the main canvas as a PNG image.<br>
+      The <b>status bar</b> at the bottom always shows your current mode, signal, and equation.
     </div>
+  </div>
+
+  <div style="margin-top:20px;font-size:0.75rem;color:var(--text-dim)">
+    <hr style="border-color:var(--border);margin:12px 0">
+    <div>Created by <b>Ankan Bhowmik</b>. Visit <a href="https://ankanbhowmik.vercel.app" target="_blank" style="color:var(--accent);text-decoration:none">My Portfolio</a>.</div>
+    <div style="margin-top:4px">Try my other tool <a href="https://matrixplay.vercel.app/" target="_blank" style="color:var(--accent);text-decoration:none">MatrixPlay</a>.</div>
+  </div>
+
+</div>
   </div>
 </div>
 </body>
