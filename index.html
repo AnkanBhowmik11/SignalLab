@@ -520,8 +520,8 @@
         <label>Drawing Mode</label>
         <div class="tool-grid">
 <!-- AFTER -->
+ <button class="tool-btn active" id="tool-line" onclick="setTool('line')">/ Line Seg</button>
 <button class="tool-btn" id="tool-draw" onclick="setTool('draw')">✏ Freehand</button>
-<button class="tool-btn active" id="tool-line" onclick="setTool('line')">/ Line Seg</button>
           <button class="tool-btn" id="tool-ramp" onclick="setTool('ramp')">⟋ Ramp</button>
           <button class="tool-btn" id="tool-step" onclick="setTool('step')">⌐ Step</button>
           <button class="tool-btn" id="tool-impulse" onclick="setTool('impulse')">↑ Impulse</button>
@@ -570,8 +570,8 @@
         </div>
 
         <div class="row2" style="margin-top:10px">
-          <div><label>t start</label><input type="number" id="t-start" value="-5" step="1"></div>
-          <div><label>t end</label><input type="number" id="t-end" value="5" step="1"></div>
+          <div><label>t start</label><input type="number" id="t-start" value="-10" step="1"></div>
+          <div><label>t end</label><input type="number" id="t-end" value="10" step="1"></div>
         </div>
 
         <button class="btn btn-primary" onclick="plotFromEquation()">▶ Plot Equation</button>
@@ -717,18 +717,18 @@ No signal loaded.
 
       <!-- Dual ops graphs -->
       <div id="dual-panel" style="display:none">
-        <div class="dual-canvas">
+      <div class="dual-canvas" style="gap:20px;">
           <div class="graph-panel">
             <div class="graph-header">
               <div class="graph-title"><span style="color:var(--accent)">x₁(t)</span></div>
             </div>
-            <canvas id="dual-canvas1" width="420" height="220"></canvas>
+            <canvas id="dual-canvas1" width="420" height="320"></canvas>
           </div>
           <div class="graph-panel">
             <div class="graph-header">
               <div class="graph-title"><span style="color:var(--accent2)">x₂(t)</span></div>
             </div>
-            <canvas id="dual-canvas2" width="420" height="220"></canvas>
+            <canvas id="dual-canvas2" width="420" height="320"></canvas>
           </div>
         </div>
         <div class="graph-panel" style="margin-top:16px">
@@ -738,7 +738,7 @@ No signal loaded.
               <button class="icon-btn" onclick="closeDualPanel()">✕ Close</button>
             </div>
           </div>
-          <canvas id="dual-result" width="900" height="260"></canvas>
+          <canvas id="dual-result" width="900" height="320"></canvas>
         </div>
       </div>
 
@@ -1940,13 +1940,49 @@ function computeDualOp() {
   let d1, d2;
 
   if (dualInputMode === 'graph') {
-    const flatten = strokes => {
-      const all = strokes.flat().sort((a, b) => a.x - b.x);
-      return { xs: all.map(p => p.x), ys: all.map(p => p.y) };
+    const resample = (strokes, tStart, tEnd, N) => {
+      const xs = [], ys = [];
+      const dt = (tEnd - tStart) / N;
+
+      for (let i = 0; i <= N; i++) {
+        const t = tStart + i * dt;
+        xs.push(t);
+        let found = false;
+
+        for (const stroke of strokes) {
+          if (stroke.length < 2) continue;
+          const sorted = stroke.slice().sort((a, b) => a.x - b.x);
+          const xmin = sorted[0].x;
+          const xmax = sorted[sorted.length - 1].x;
+
+          // Skip vertical strokes
+          if (Math.abs(xmax - xmin) < 0.01) continue;
+
+          if (t < xmin || t > xmax) continue;
+
+          for (let j = 0; j < sorted.length - 1; j++) {
+            const dx = sorted[j + 1].x - sorted[j].x;
+            if (dx < 1e-10) continue;
+            if (sorted[j].x <= t && t <= sorted[j + 1].x) {
+              const frac = (t - sorted[j].x) / dx;
+              ys.push(sorted[j].y + frac * (sorted[j + 1].y - sorted[j].y));
+              found = true;
+              break;
+            }
+          }
+          if (found) break;
+        }
+
+        if (!found) ys.push(0);
+      }
+
+      return { xs, ys };
     };
-    d1 = flatten(dualStrokes1);
-    d2 = flatten(dualStrokes2);
+
+    d1 = resample(dualStrokes1, tStart, tEnd, N);
+    d2 = resample(dualStrokes2, tStart, tEnd, N);
     if (!d1.xs.length || !d2.xs.length) { showNotif('Draw both signals first'); return; }
+
   } else {
     const x1expr = document.getElementById('dual-x1').value;
     const x2expr = document.getElementById('dual-x2').value;
@@ -1961,7 +1997,12 @@ function computeDualOp() {
   }
 
   const ops = { add: (a, b) => a + b, sub: (a, b) => a - b, mul: (a, b) => a * b };
-  const labels = { add: 'x₁(t) + x₂(t)', sub: 'x₁(t) − x₂(t)', mul: 'x₁(t) · x₂(t)', conv: 'x₁(t) ★ x₂(t)' };
+  const labels = {
+    add: 'x₁(t) + x₂(t)',
+    sub: 'x₁(t) − x₂(t)',
+    mul: 'x₁(t) · x₂(t)',
+    conv: 'x₁(t) ★ x₂(t)'
+  };
   document.getElementById('result-label').textContent = `y(t) = ${labels[activeDualOp]}`;
 
   let res;
@@ -1975,25 +2016,40 @@ function computeDualOp() {
   document.getElementById('dual-panel').style.display = 'block';
 
   const w1 = dualCanvas1.offsetWidth || 420;
-  dualCanvas1.width = w1; dualCanvas2.width = w1;
+  dualCanvas1.width = w1;
+  dualCanvas2.width = w1;
+
+  // Calculate proper y ranges
+const maxY1 = Math.ceil(Math.max(...d1.ys.map(Math.abs)) * 1.3) || 2;
+const maxY2 = Math.ceil(Math.max(...d2.ys.map(Math.abs)) * 1.3) || 2;
+const maxYRes = Math.ceil(Math.max(...res.ys.map(Math.abs)) * 1.3) || 2;
 
   drawAxes(dc1, dualCanvas1, viewXRange, viewYRange, mode === 'cts' ? 't' : 'n');
   drawAxes(dc2, dualCanvas2, viewXRange, viewYRange, mode === 'cts' ? 't' : 'n');
-  drawAxes(dr, dualResult, activeDualOp === 'conv' ? viewXRange * 2 : viewXRange, viewYRange * 2, mode === 'cts' ? 't' : 'n');
+  drawAxes(dr, dualResult,
+    activeDualOp === 'conv' ? viewXRange * 2 : viewXRange,
+    maxYRes,
+    mode === 'cts' ? 't' : 'n'
+  );
 
   if (mode === 'cts') {
     plotCTS(dc1, dualCanvas1, d1.xs, d1.ys, '#00d4ff', viewXRange, viewYRange, true);
     plotCTS(dc2, dualCanvas2, d2.xs, d2.ys, '#ff6b6b', viewXRange, viewYRange, true);
-    plotCTS(dr, dualResult, res.xs, res.ys, '#7fff7f', activeDualOp === 'conv' ? viewXRange * 2 : viewXRange, Math.max(...res.ys.map(Math.abs)) * 1.2 || 1);
+    plotCTS(dr, dualResult, res.xs, res.ys, '#7fff7f',
+      activeDualOp === 'conv' ? viewXRange * 2 : viewXRange,
+      maxYRes
+    );
   } else {
     plotDTS(dc1, dualCanvas1, d1.xs, d1.ys, '#00d4ff', viewXRange, viewYRange);
     plotDTS(dc2, dualCanvas2, d2.xs, d2.ys, '#ff6b6b', viewXRange, viewYRange);
-    plotDTS(dr, dualResult, res.xs, res.ys, '#7fff7f', activeDualOp === 'conv' ? viewXRange * 2 : viewXRange, Math.max(...res.ys.map(Math.abs)) * 1.2 || 1);
+    plotDTS(dr, dualResult, res.xs, res.ys, '#7fff7f',
+      activeDualOp === 'conv' ? viewXRange * 2 : viewXRange,
+      maxYRes
+    );
   }
 
   showNotif(`Computed: ${labels[activeDualOp]}`);
 }
-
 function convolve(xs1, ys1, xs2, ys2) {
   // Discrete approximation of convolution
   const dt = xs1[1]-xs1[0];
@@ -2039,40 +2095,103 @@ function enableDualDrawing() {
   [dualCanvas1, dualCanvas2].forEach((canvas, idx) => {
     const n = idx + 1;
     let drawing = false;
-    let stroke = [];
+    let startPt = null;
 
-    canvas.addEventListener('mousedown', e => {
-      if (dualInputMode !== 'graph' || dualDrawTarget !== n) return;
-      drawing = true;
-      stroke = [getDualData(e, canvas)];
-    });
+canvas.addEventListener('mousedown', e => {
+  if (dualInputMode !== 'graph' || dualDrawTarget !== n) return;
+  drawing = true;
+  const d = getDualData(e, canvas);
+  // Force integer snap on record
+  startPt = {
+    x: d.didSnapX ? Math.round(d.x) : d.x,
+    y: d.didSnapY ? Math.round(d.y) : d.y,
+    didSnapX: d.didSnapX,
+    didSnapY: d.didSnapY
+  };
+});
 
     canvas.addEventListener('mousemove', e => {
-      if (!drawing || dualInputMode !== 'graph' || dualDrawTarget !== n) return;
-      const d = getDualData(e, canvas);
-      if (d.x > stroke[stroke.length - 1].x) stroke.push(d);
-      redrawDualCanvas(n, stroke);
-    });
+      const snapped = getDualData(e, canvas);
+      const snapTag = (snapped.didSnapX || snapped.didSnapY) ? ' ⊙' : '';
+      document.getElementById('cursor-pos').textContent = `${snapped.x.toFixed(2)}, ${snapped.y.toFixed(2)}${snapTag}`;
+      document.getElementById('cursor-amp').textContent = snapped.y.toFixed(3);
 
-    canvas.addEventListener('mouseup', () => {
-      if (!drawing) return;
-      drawing = false;
-      if (stroke.length > 1) {
-        if (n === 1) dualStrokes1.push(stroke.slice());
-        else dualStrokes2.push(stroke.slice());
+      const ctx = n === 1 ? dc1 : dc2;
+
+      if (!drawing || !startPt) {
+        // Hover snap indicator only
+        if (snapped.didSnapX || snapped.didSnapY) {
+          redrawDualCanvas(n);
+          drawDualSnapIndicator(snapped, canvas, ctx);
+        }
+        return;
       }
-      stroke = [];
+
+      // Live line segment preview
       redrawDualCanvas(n);
+      const p1 = dataToCanvas(startPt.x, startPt.y, canvas, viewXRange, viewYRange);
+      const p2 = dataToCanvas(snapped.x, snapped.y, canvas, viewXRange, viewYRange);
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(p1.px, p1.py);
+      ctx.lineTo(p2.px, p2.py);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Start point dot
+      ctx.beginPath();
+      ctx.arc(p1.px, p1.py, 3, 0, 2 * PI);
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.fill();
+
+      if (snapped.didSnapX || snapped.didSnapY) {
+        drawDualSnapIndicator(snapped, canvas, ctx);
+      }
     });
 
+ canvas.addEventListener('mouseup', e => {
+  if (!drawing || !startPt) return;
+  drawing = false;
+  const endPt = getDualData(e, canvas);
+
+  const dx = endPt.x - startPt.x;
+  const dy = endPt.y - startPt.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist > 0.05) {
+    // Force snap start and end to integers if close enough
+    const x0 = startPt.didSnapX ? Math.round(startPt.x) : startPt.x;
+    const y0 = startPt.didSnapY ? Math.round(startPt.y) : startPt.y;
+    const x1 = endPt.didSnapX ? Math.round(endPt.x) : endPt.x;
+    const y1 = endPt.didSnapY ? Math.round(endPt.y) : endPt.y;
+
+    const N = 200;
+    const seg = [];
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      seg.push({
+        x: x0 + t * (x1 - x0),
+        y: y0 + t * (y1 - y0),
+        didSnapX: false,
+        didSnapY: false
+      });
+    }
+    if (n === 1) dualStrokes1.push(seg);
+    else dualStrokes2.push(seg);
+  }
+
+  startPt = null;
+  redrawDualCanvas(n);
+});
     canvas.addEventListener('mouseleave', () => {
-      if (drawing && stroke.length > 1) {
-        if (n === 1) dualStrokes1.push(stroke.slice());
-        else dualStrokes2.push(stroke.slice());
+      if (drawing && startPt) {
+        // Discard incomplete stroke on leave
+        drawing = false;
+        startPt = null;
+        redrawDualCanvas(n);
       }
-      drawing = false;
-      stroke = [];
-      redrawDualCanvas(n);
     });
   });
 }
@@ -2081,7 +2200,24 @@ function getDualData(e, canvas) {
   const rect = canvas.getBoundingClientRect();
   const px = (e.clientX - rect.left) * (canvas.width / rect.width);
   const py = (e.clientY - rect.top) * (canvas.height / rect.height);
-  return canvasToData(px, py, canvas, viewXRange, viewYRange);
+  const raw = canvasToData(px, py, canvas, viewXRange, viewYRange);
+
+  // Separate thresholds for x and y based on their own ranges
+  const snapDistX = viewXRange * 0.07;
+  const snapDistY = viewYRange * 0.07;
+
+  const snapX = Math.round(raw.x);
+  const snapY = Math.round(raw.y);
+
+  const didSnapX = Math.abs(raw.x - snapX) < snapDistX;
+  const didSnapY = Math.abs(raw.y - snapY) < snapDistY;
+
+  return {
+    x: didSnapX ? snapX : raw.x,
+    y: didSnapY ? snapY : raw.y,
+    didSnapX,
+    didSnapY
+  };
 }
 
 function redrawDualCanvas(n, live = []) {
@@ -2094,6 +2230,45 @@ function redrawDualCanvas(n, live = []) {
     if (s.length > 1) plotCTS(ctx, canvas, s.map(p => p.x), s.map(p => p.y), color, viewXRange, viewYRange, true);
   });
   if (live.length > 1) plotCTS(ctx, canvas, live.map(p => p.x), live.map(p => p.y), 'rgba(255,255,255,0.25)', viewXRange, viewYRange);
+}
+
+function drawDualSnapIndicator(snapped, canvas, ctx) {
+  if (!snapped.didSnapX && !snapped.didSnapY) return;
+  const p = dataToCanvas(snapped.x, snapped.y, canvas, viewXRange, viewYRange);
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(p.px, p.py, 8, 0, 2 * PI);
+  ctx.strokeStyle = 'rgba(255,204,68,0.9)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  // Inner dot
+  ctx.beginPath();
+  ctx.arc(p.px, p.py, 2.5, 0, 2 * PI);
+  ctx.fillStyle = '#ffcc44';
+  ctx.fill();
+  // Crosshair lines
+  ctx.strokeStyle = 'rgba(255,204,68,0.4)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  if (snapped.didSnapX) {
+    ctx.beginPath();
+    ctx.moveTo(p.px, p.py - 14);
+    ctx.lineTo(p.px, p.py + 14);
+    ctx.stroke();
+  }
+  if (snapped.didSnapY) {
+    ctx.beginPath();
+    ctx.moveTo(p.px - 14, p.py);
+    ctx.lineTo(p.px + 14, p.py);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  // Label
+  ctx.font = '9px JetBrains Mono, monospace';
+  ctx.fillStyle = '#ffcc44';
+  ctx.textAlign = 'left';
+  ctx.fillText(`(${snapped.x}, ${snapped.y})`, p.px + 12, p.py - 6);
 }
 
 // ===== PANEL SWITCHING =====
@@ -2308,6 +2483,10 @@ function resizeCanvases() {
   mainCanvas.width = Math.max(600, w);
   transformCanvas.width = Math.max(600, w);
   dualResult.width = Math.max(600, w);
+  // Dual input canvases — half width each minus gap
+  const dualW = Math.max(380, Math.floor((w - 20) / 2));
+  dualCanvas1.width = dualW;
+  dualCanvas2.width = dualW;
   redrawMain();
 }
 
