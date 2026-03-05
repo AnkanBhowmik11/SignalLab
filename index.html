@@ -819,11 +819,10 @@
 
 <button class="btn btn-primary" onclick="applyTransform()" style="margin-bottom:5px">▶ Apply A·x(at+b)</button>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
-  <button class="btn btn-secondary" onclick="document.getElementById('t-a').value='1';document.getElementById('t-b').value='0';document.getElementById('t-amp').value='1';document.getElementById('transform-eq').textContent='—';document.getElementById('fmt-eq-transform').style.display='none';showNotif('Params reset')">↺ Reset Params</button>
-  <button class="btn btn-danger" onclick="document.getElementById('transform-panel').style.display='none';showNotif('Transform cleared')">✕ Clear Result</button>
+  <button class="btn btn-secondary" onclick="lastTransformData=null;document.getElementById('main-label').innerHTML=mode==='cts'?'x(t)':'x[n]';document.getElementById('t-a').value='1';document.getElementById('t-b').value='0';document.getElementById('t-amp').value='1';document.getElementById('transform-eq').textContent='—';document.getElementById('fmt-eq-transform').style.display='none';redrawMain();showNotif('Reset')">↺ Reset</button>
+<button class="btn btn-danger" onclick="lastTransformData=null;clearCanvas('main');document.getElementById('main-label').innerHTML=mode==='cts'?'x(t)':'x[n]';document.getElementById('fmt-eq-transform').style.display='none';document.getElementById('transform-eq').textContent='—';document.getElementById('t-a').value='1';document.getElementById('t-b').value='0';document.getElementById('t-amp').value='1';redrawMain();showNotif('Cleared all')">✕ Clear All</button>
 </div>
-  <button class="btn btn-secondary" onclick="overlayTransform()">⊕ Overlay Both</button>
-
+ 
 <div class="equation-display" id="transform-eq">—</div>
 <div id="fmt-eq-transform" class="fmt-equation" style="display:none"></div>
 </div>
@@ -944,7 +943,7 @@ No signal loaded.
       </div>
 
       <!-- Transformed graph -->
-      <div class="graph-panel" id="transform-panel" style="display:none">
+<div class="graph-panel" id="transform-panel" style="display:none!important;visibility:hidden">
         <div class="graph-header">
           <div class="graph-title"><span id="transform-label">x(at+b)</span> — Transformed</div>
           <div class="graph-actions">
@@ -1016,6 +1015,8 @@ let strokeUndoStack = []; // for undo
 
 let currentEquation = '';
 let mainSignalData = null; // {xs, ys} from equation plot
+let lastTransformData = null; // persists transform overlay
+
 
 // Canvas refs
 const mainCanvas = document.getElementById('main-canvas');
@@ -1279,65 +1280,75 @@ function plotImpulse(ctx, canvas, x0, amp, color, xrange, yrange) {
 function redrawMain() {
   drawAxes(mc, mainCanvas, viewXRange, viewYRange, mode==='cts'?'t':'n');
 
-  if (mainSignalData) {
+if (mainSignalData && !lastTransformData) {
     if (mode === 'cts') {
       plotCTS(mc, mainCanvas, mainSignalData.xs, mainSignalData.ys, '#00d4ff', viewXRange, viewYRange, true);
     } else {
       plotDTS(mc, mainCanvas, mainSignalData.xs, mainSignalData.ys, '#7fff7f', viewXRange, viewYRange);
     }
-    return;
+  } else if (mode === 'dts') {
+    if (!lastTransformData) {
+      const ox = dataToCanvas(0, 0, mainCanvas, viewXRange, viewYRange);
+      for (const pt of dtsPoints) {
+        const p = dataToCanvas(pt.x, pt.y, mainCanvas, viewXRange, viewYRange);
+        mc.strokeStyle = '#7fff7f'; mc.lineWidth = 2;
+        mc.beginPath(); mc.moveTo(p.px, ox.py); mc.lineTo(p.px, p.py); mc.stroke();
+        mc.beginPath(); mc.arc(p.px, p.py, 4, 0, 2*PI);
+        mc.fillStyle = '#7fff7f'; mc.fill();
+        mc.strokeStyle = '#080c12'; mc.lineWidth = 1; mc.stroke();
+        mc.font = '9px JetBrains Mono, monospace';
+        mc.fillStyle = 'rgba(127,255,127,0.7)';
+        mc.textAlign = 'center';
+        mc.fillText(pt.y, p.px, p.py - 8);
+      }
+    }
+  } else {
+    // CTS multi-stroke rendering
+    const colors = ['#00d4ff','#ffcc44','#ff6b6b','#7fff7f','#c084fc','#fb923c'];
+    drawStrokes.forEach((stroke, idx) => {
+      if (stroke.length < 2) return;
+      const color = colors[idx % colors.length];
+      mc.beginPath();
+      mc.strokeStyle = color; mc.lineWidth = 2.5;
+      mc.lineJoin = 'round'; mc.lineCap = 'round';
+      for (let i = 0; i < stroke.length; i++) {
+        const p = dataToCanvas(stroke[i].x, stroke[i].y, mainCanvas, viewXRange, viewYRange);
+        if (i === 0) mc.moveTo(p.px, p.py); else mc.lineTo(p.px, p.py);
+      }
+      mc.stroke();
+      mc.globalAlpha = 0.04; mc.fillStyle = color;
+      const pStart = dataToCanvas(stroke[0].x, 0, mainCanvas, viewXRange, viewYRange);
+      const pEnd = dataToCanvas(stroke[stroke.length-1].x, 0, mainCanvas, viewXRange, viewYRange);
+      const ox = dataToCanvas(0,0,mainCanvas,viewXRange,viewYRange);
+      mc.lineTo(pEnd.px, ox.py); mc.lineTo(pStart.px, ox.py); mc.closePath(); mc.fill();
+      mc.globalAlpha = 1;
+      const first = dataToCanvas(stroke[0].x, stroke[0].y, mainCanvas, viewXRange, viewYRange);
+      const last = dataToCanvas(stroke[stroke.length-1].x, stroke[stroke.length-1].y, mainCanvas, viewXRange, viewYRange);
+      mc.beginPath(); mc.arc(first.px, first.py, 3, 0, 2*PI); mc.fillStyle = color; mc.fill();
+      mc.beginPath(); mc.arc(last.px, last.py, 3, 0, 2*PI); mc.fillStyle = color; mc.fill();
+    });
   }
 
-  if (mode === 'dts') {
-    // Render DTS click-points as stems
-    const ox = dataToCanvas(0, 0, mainCanvas, viewXRange, viewYRange);
-    for (const pt of dtsPoints) {
-      const p = dataToCanvas(pt.x, pt.y, mainCanvas, viewXRange, viewYRange);
-      mc.strokeStyle = '#7fff7f';
-      mc.lineWidth = 2;
-      mc.beginPath(); mc.moveTo(p.px, ox.py); mc.lineTo(p.px, p.py); mc.stroke();
-      mc.beginPath(); mc.arc(p.px, p.py, 4, 0, 2*PI);
-      mc.fillStyle = '#7fff7f'; mc.fill();
-      mc.strokeStyle = '#080c12'; mc.lineWidth = 1; mc.stroke();
-      // label value
-      mc.font = '9px JetBrains Mono, monospace';
-      mc.fillStyle = 'rgba(127,255,127,0.7)';
-      mc.textAlign = 'center';
-      mc.fillText(pt.y, p.px, p.py - 8);
-    }
-    return;
-  }
+// Always re-apply transform overlay if active
+  if (lastTransformData) {
+    const { origData, transData } = lastTransformData;
 
-  // CTS multi-stroke rendering
-  const colors = ['#00d4ff','#ffcc44','#ff6b6b','#7fff7f','#c084fc','#fb923c'];
-  drawStrokes.forEach((stroke, idx) => {
-    if (stroke.length < 2) return;
-    const color = colors[idx % colors.length];
-    mc.beginPath();
-    mc.strokeStyle = color;
-    mc.lineWidth = 2.5;
-    mc.lineJoin = 'round';
-    mc.lineCap = 'round';
-    for (let i = 0; i < stroke.length; i++) {
-      const p = dataToCanvas(stroke[i].x, stroke[i].y, mainCanvas, viewXRange, viewYRange);
-      if (i === 0) mc.moveTo(p.px, p.py); else mc.lineTo(p.px, p.py);
+// Redraw input signal as gray at 20% opacity
+    mc.globalAlpha = 0.2;
+    if (mode === 'cts') {
+      plotCTS(mc, mainCanvas, origData.xs, origData.ys, '#888888', viewXRange, viewYRange, false);
+    } else {
+      plotDTS(mc, mainCanvas, origData.xs, origData.ys, '#888888', viewXRange, viewYRange);
     }
-    mc.stroke();
-    // Fill under
-    mc.globalAlpha = 0.04;
-    mc.fillStyle = color;
-    const pStart = dataToCanvas(stroke[0].x, 0, mainCanvas, viewXRange, viewYRange);
-    const pEnd = dataToCanvas(stroke[stroke.length-1].x, 0, mainCanvas, viewXRange, viewYRange);
-    const ox = dataToCanvas(0,0,mainCanvas,viewXRange,viewYRange);
-    mc.lineTo(pEnd.px, ox.py); mc.lineTo(pStart.px, ox.py); mc.closePath(); mc.fill();
     mc.globalAlpha = 1;
 
-    // Endpoint dots
-    const first = dataToCanvas(stroke[0].x, stroke[0].y, mainCanvas, viewXRange, viewYRange);
-    const last = dataToCanvas(stroke[stroke.length-1].x, stroke[stroke.length-1].y, mainCanvas, viewXRange, viewYRange);
-    mc.beginPath(); mc.arc(first.px, first.py, 3, 0, 2*PI); mc.fillStyle = color; mc.fill();
-    mc.beginPath(); mc.arc(last.px, last.py, 3, 0, 2*PI); mc.fillStyle = color; mc.fill();
-  });
+    // Draw transformed output at full brightness
+    if (mode === 'cts') {
+      plotCTS(mc, mainCanvas, transData.xs, transData.ys, '#ffcc44', viewXRange, viewYRange, true);
+    } else {
+      plotDTS(mc, mainCanvas, transData.xs, transData.ys, '#ffcc44', viewXRange, viewYRange);
+    }
+  }
 }
 
 // Get all drawn points merged (sorted by x) for analysis
@@ -2073,47 +2084,146 @@ function applyTransform() {
   let origEq = currentEquation || document.getElementById('eqn-input').value || 'u(t)';
   let transformedEq = buildTransformEq(origEq, a, b, A);
 
-  document.getElementById('transform-panel').style.display = 'block';
-  document.getElementById('transform-label').textContent = transformedEq;
   document.getElementById('transform-eq').textContent = transformedEq;
   document.getElementById('transform-eq-info').textContent = transformedEq;
 
   const N = 1000;
   let origData, transData;
   const allPts = getAllDrawnPoints();
-  if (origEq !== 'custom' && origEq && allPts.length === 0) {
-    origData = generateSignal(origEq, -viewXRange, viewXRange, N);
-    transData = generateTransformed(origEq, a, b, N);
-  } else if (allPts.length > 0) {
-    origData = { xs: allPts.map(p => p.x), ys: allPts.map(p => p.y) };
-    transData = transformDrawnPoints(allPts, a, b);
+
+  if (mode === 'cts') {
+    if (origEq !== 'custom' && origEq && allPts.length === 0) {
+      origData = generateSignal(origEq, -viewXRange, viewXRange, N);
+      transData = generateTransformed(origEq, a, b, N);
+    } else if (allPts.length > 0) {
+      origData = { xs: allPts.map(p => p.x), ys: allPts.map(p => p.y) };
+      transData = transformDrawnPoints(allPts, a, b);
+    } else {
+      showNotif('No signal to transform'); return;
+    }
+    transData.ys = transData.ys.map(y => y * A);
+
   } else {
-    showNotif('No signal to transform'); return;
+    // DTS mode: y[n] = x[a*n + b]
+    const origMap = {};
+
+    if (allPts.length > 0) {
+      origData = { xs: allPts.map(p => p.x), ys: allPts.map(p => p.y) };
+      allPts.forEach(p => { origMap[Math.round(p.x)] = p.y; });
+    } else if (mainSignalData && mainSignalData.xs.length > 0) {
+      // Filter to only integer positions (DTS signal)
+      const intXs = [], intYs = [];
+      mainSignalData.xs.forEach((x, i) => {
+        const rx = Math.round(x);
+        if (Math.abs(x - rx) < 0.1 && origMap[rx] === undefined) {
+          origMap[rx] = mainSignalData.ys[i];
+          intXs.push(rx);
+          intYs.push(mainSignalData.ys[i]);
+        }
+      });
+      origData = { xs: intXs, ys: intYs };
+    } else {
+      showNotif('No signal to transform'); return;
+    }
+
+    const nStart = -Math.round(viewXRange);
+    const nEnd = Math.round(viewXRange);
+    const dtsTransXs = [], dtsTransYs = [];
+
+    for (let n = nStart; n <= nEnd; n++) {
+      const tau = a * n + b;
+      const tauRounded = Math.round(tau);
+      // Only valid when tau is (near) integer — DTS is only defined at integers
+      if (Math.abs(tau - tauRounded) < 0.001) {
+       const val = (origMap[tauRounded] !== undefined) ? origMap[tauRounded] : 0;
+        if (val !== 0) {
+          dtsTransXs.push(n);
+          dtsTransYs.push(val * A);
+        }
+      }
+    }
+    transData = { xs: dtsTransXs, ys: dtsTransYs };
   }
 
-  // Apply amplitude scaling
-  transData.ys = transData.ys.map(y => y * A);
+  // Store and redraw — never paint directly here
+  lastTransformData = { origData, transData, transformedEq };
 
-  drawAxes(tc, transformCanvas, viewXRange, viewYRange, mode === 'cts' ? 't' : 'n');
-  plotCTS(tc, transformCanvas, origData.xs, origData.ys, 'rgba(80,120,160,0.35)', viewXRange, viewYRange);
-  if (mode === 'cts') plotCTS(tc, transformCanvas, transData.xs, transData.ys, '#ffcc44', viewXRange, viewYRange, true);
-  else plotDTS(tc, transformCanvas, transData.xs, transData.ys, '#ffcc44', viewXRange, viewYRange);
+  // Update title
+  document.getElementById('main-label').innerHTML =
+    `<span style="color:var(--accent);opacity:0.5">x(${mode==='cts'?'t':'n'})</span> &nbsp;&amp;&nbsp; <span style="color:var(--accent4)">${transformedEq}</span>`;
 
-document.getElementById('transform-eq').textContent = transformedEq;
   document.getElementById('sb-eq').textContent = transformedEq;
-  showNotif(`Transformed: ${transformedEq}`);
 
-  // Show formatted equation in transform panel
-  const fmtEl = document.getElementById('fmt-eq-transform');
+const fmtEl = document.getElementById('fmt-eq-transform');
   if (fmtEl) {
     fmtEl.style.display = 'block';
     const safeEq = transformedEq.replace(/'/g, "\\'");
+
+    // Build decomposed equation from the transformed signal data
+    let decompHtml = '';
+    if (mode === 'cts') {
+      // Use existing stroke/signal data to build segments, then decompose
+      const segs = buildSegments();
+      if (segs.length > 0) {
+        // Transform each segment's x-coordinates by inverse: original t → new t
+        // x(at+b) means new domain: shift segs by -b then scale by 1/a
+        const transformedSegs = segs.map(s => ({
+          ...s,
+          x0: (s.x0 - b) / a,
+          x1: (s.x1 - b) / a,
+          slope: s.slope * a,
+          intercept: s.intercept - s.slope * b,
+        }));
+        // re-sort after coordinate change (in case a is negative)
+        transformedSegs.forEach(s => {
+          if (s.x0 > s.x1) { [s.x0, s.x1] = [s.x1, s.x0]; [s.y0, s.y1] = [s.y1, s.y0]; }
+        });
+        transformedSegs.sort((p, q) => p.x0 - q.x0);
+        const { eqHtml } = buildPiecewiseEquation(transformedSegs);
+        decompHtml = `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">${eqHtml}</div>`;
+      } else if (transData && transData.xs && transData.xs.length > 1) {
+        // Fallback: build from sampled transData points via pseudo-segments
+        decompHtml = `<div style="margin-top:6px;font-family:var(--mono);font-size:0.65rem;color:var(--text-dim)">Draw-based signal — analyze after transform for full decomposition.</div>`;
+      }
+    } else {
+      // DTS: express as sum of scaled delta[n-k]
+      if (transData && transData.xs && transData.xs.length > 0) {
+        const nonzero = transData.xs
+          .map((x, i) => ({ n: x, v: transData.ys[i] }))
+          .filter(p => Math.abs(p.v) > 0.001);
+        if (nonzero.length > 0) {
+          const terms = nonzero.map(p => {
+            const amp = fmtN(p.v);
+            const n = fmtN(p.n);
+            if (p.n === 0) return amp === '1' ? 'δ[n]' : `${amp} δ[n]`;
+            if (p.n > 0) return amp === '1' ? `δ[n − ${n}]` : `${amp} δ[n − ${n}]`;
+            return amp === '1' ? `δ[n + ${fmtN(Math.abs(p.n))}]` : `${amp} δ[n + ${fmtN(Math.abs(p.n))}]`;
+          });
+          const eqStr = `y[n] = ${terms.join(' + ')}`;
+          const safeStr = eqStr.replace(/'/g, "\\'");
+          decompHtml = `
+            <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;font-family:'Georgia',serif;font-size:0.88rem;color:var(--accent3);line-height:2">
+              ${eqStr}
+              <button class="copy-rhs-btn" onclick="navigator.clipboard.writeText('${safeStr}').then(()=>showNotif('Copied!'))">⎘</button>
+            </div>
+            <div style="font-family:var(--mono);font-size:0.58rem;color:var(--text-dim);margin-top:2px">
+              <span style="color:var(--accent3)">■</span> δ[n] = unit impulse
+            </div>`;
+        }
+      }
+    }
+
     fmtEl.innerHTML = `
-      <span class="eq-main" style="font-family:'Georgia',serif;color:var(--accent4)">${transformedEq}</span>
-      <button class="copy-rhs-btn" title="Copy"
-        onclick="navigator.clipboard.writeText('${safeEq}').then(()=>showNotif('Copied!'))">⎘</button>`;
+      <div style="font-family:'Georgia',serif;color:var(--accent4);font-size:0.88rem">
+        ${transformedEq}
+        <button class="copy-rhs-btn" title="Copy"
+          onclick="navigator.clipboard.writeText('${safeEq}').then(()=>showNotif('Copied!'))">⎘</button>
+      </div>
+      ${decompHtml}`;
   }
 
+  redrawMain(); // single source of truth — overlay handled inside redrawMain
+  showNotif(`Transformed: ${transformedEq}`);
 }
 
 function buildTransformEq(orig, a, b, A=1) {
@@ -2589,6 +2699,7 @@ function setMode(m) {
   document.getElementById('mode-badge').textContent = m.toUpperCase();
   document.getElementById('mode-badge').className = 'badge '+(m==='cts'?'cts':'dts');
   document.getElementById('main-label').textContent = m==='cts'?'x(t)':'x[n]';
+  lastTransformData = null;
   document.getElementById('sb-mode').textContent = m.toUpperCase();
   document.getElementById('info-mode').textContent = m.toUpperCase();
   document.getElementById('dts-hint').style.display = m === 'dts' ? 'block' : 'none';
@@ -2684,6 +2795,8 @@ function clearCanvas(which) {
     liveStroke = [];
     mainSignalData = null;
     currentEquation = '';
+    lastTransformData = null;
+    document.getElementById('main-label').textContent = mode === 'cts' ? 'x(t)' : 'x[n]';
     strokeUndoStack = [];
     document.getElementById('sb-eq').textContent = '—';
     document.getElementById('sb-signal').textContent = '—';
