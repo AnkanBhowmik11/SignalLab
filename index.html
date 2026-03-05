@@ -675,7 +675,7 @@
 <body>
 
 <header>
-  <div class="logo">Signal<span>Lab</span> <span style="font-size:0.6rem;margin-left:6px;color:var(--text-dim)">v1.0</span></div>
+  <div class="logo">Signal<span>Lab</span> <span style="font-size:0.6rem;margin-left:6px;color:var(--text-dim)">v1.1</span></div>
   <div class="mode-tabs">
     <button class="mode-tab active" onclick="setMode('cts')">CTS x(t)</button>
     <button class="mode-tab" onclick="setMode('dts')">DTS x[n]</button>
@@ -3095,14 +3095,73 @@ init();
     </div>
   </div>
 
-  <div style="margin-top:20px;font-size:0.75rem;color:var(--text-dim)">
-    <hr style="border-color:var(--border);margin:12px 0">
-    <div>Created by <b>Ankan Bhowmik</b>. Visit <a href="https://ankanbhowmik.vercel.app" target="_blank" style="color:var(--accent);text-decoration:none">My Portfolio</a>.</div>
-    <div style="margin-top:4px">Try my other tool <a href="https://matrixplay.vercel.app/" target="_blank" style="color:var(--accent);text-decoration:none">MatrixPlay</a>.</div>
-  </div>
+<div style="margin-top:20px;font-size:0.75rem;color:var(--text-dim)">
+      <hr style="border-color:var(--border);margin:12px 0">
+      <button onclick="document.getElementById('info-modal').style.display='none';document.getElementById('changelog-modal').style.display='flex'"
+        style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);font-family:var(--mono);font-size:0.68rem;padding:6px 14px;cursor:pointer;margin-bottom:12px;transition:all 0.15s;width:100%"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.background='rgba(0,212,255,0.08)'"
+        onmouseout="this.style.borderColor='var(--border)';this.style.background='none'">
+        ★ Version Updates
+      </button>
+      <div>Created by <b>Ankan Bhowmik</b>. Visit <a href="https://ankanbhowmik.vercel.app" target="_blank" style="color:var(--accent);text-decoration:none">My Portfolio</a>.</div>
+      <div style="margin-top:4px">Try my other tool <a href="https://matrixplay.vercel.app/" target="_blank" style="color:var(--accent);text-decoration:none">MatrixPlay</a>.</div>
+    </div>
 
 </div>
   </div>
 </div>
+
+<div id="changelog-modal"
+  onclick="if(event.target===this)this.style.display='none'"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1001;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;max-width:480px;width:90%;max-height:75vh;overflow-y:auto;padding:28px;position:relative">
+    <button onclick="document.getElementById('changelog-modal').style.display='none'"
+      style="position:absolute;top:14px;right:14px;background:none;border:1px solid var(--border);border-radius:4px;color:var(--text-dim);padding:3px 10px;cursor:pointer;font-family:var(--mono);font-size:0.7rem"
+      onmouseover="this.style.borderColor='var(--accent2)';this.style.color='var(--accent2)'"
+      onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">✕ Close</button>
+
+    <div style="font-family:var(--mono);font-size:0.68rem;color:var(--accent);letter-spacing:2px;margin-bottom:20px">VERSION UPDATES</div>
+
+    <!-- v1.1 -->
+    <div style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-family:var(--mono);font-size:0.8rem;font-weight:700;color:var(--accent4)">v1.1</span>
+        <span style="font-family:var(--mono);font-size:0.62rem;color:var(--text-dim)">05 Mar 2026 — IST</span>
+        <span class="badge cts" style="margin-left:auto">latest</span>
+      </div>
+      <ul style="font-family:var(--sans);font-size:0.78rem;color:var(--text);line-height:2;padding-left:18px">
+        <li>Transform output now overlays on main canvas — no separate panel</li>
+        <li>Input signal fades to gray when transform is active</li>
+        <li>Fixed DTS x[an+b] — correct integer-only sample lookup</li>
+        <li>Fixed x[2n] compression and x[n/2] expansion logic</li>
+        <li>Transform output persists on canvas — no vanishing on mouse move</li>
+        <li>Reset clears output only; Clear All wipes input + output</li>
+        <li>Transform eq box shows y[n] in δ form / y(t) in u(t)·r(t) form</li>
+        <li>Removed redundant Overlay Both button</li>
+      </ul>
+    </div>
+
+    <hr style="border-color:var(--border);margin:12px 0">
+
+    <!-- v1.0 -->
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-family:var(--mono);font-size:0.8rem;font-weight:700;color:var(--text-dim)">v1.0</span>
+        <span style="font-family:var(--mono);font-size:0.62rem;color:var(--text-dim)">Initial Release</span>
+      </div>
+      <ul style="font-family:var(--sans);font-size:0.78rem;color:var(--text-dim);line-height:2;padding-left:18px">
+        <li>CTS and DTS signal drawing — freehand, line, step, ramp, impulse</li>
+        <li>Equation → graph plotter with signal chips</li>
+        <li>Time transformations — shift, scale, reverse, amplitude</li>
+        <li>Dual ops — add, subtract, multiply, convolve</li>
+        <li>Signal analysis — piecewise u(t)/r(t) equation generation</li>
+        <li>DTS array input with origin marker</li>
+        <li>Export canvas as PNG</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
 </body>
 </html>
